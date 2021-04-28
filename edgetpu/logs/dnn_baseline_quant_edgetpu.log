@@ -1,0 +1,11 @@
+Edge TPU Compiler version 15.0.340273435
+Input: models/dnn_baseline_quant.tflite
+Output: dnn_baseline_quant_edgetpu.tflite
+
+Operator                       Count      Status
+
+ADD                            5          Mapped to Edge TPU
+QUANTIZE                       2          Mapped to Edge TPU
+SOFTMAX                        1          Mapped to Edge TPU
+FULLY_CONNECTED                6          Mapped to Edge TPU
+MUL                            5          Mapped to Edge TPU

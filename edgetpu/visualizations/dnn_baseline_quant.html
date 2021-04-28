@@ -1,0 +1,804 @@
+
+<html>
+<head>
+<style>
+body {font-family: sans-serif; background-color: #fa0;}
+table {background-color: #eca;}
+th {background-color: black; color: white;}
+h1 {
+  background-color: ffaa00;
+  padding:5px;
+  color: black;
+}
+
+svg {
+  margin: 10px;
+  border: 2px;
+  border-style: solid;
+  border-color: black;
+  background: white;
+}
+
+div {
+  border-radius: 5px;
+  background-color: #fec;
+  padding:5px;
+  margin:5px;
+}
+
+.tooltip {color: blue;}
+.tooltip .tooltipcontent  {
+    visibility: hidden;
+    color: black;
+    background-color: yellow;
+    padding: 5px;
+    border-radius: 4px;
+    position: absolute;
+    z-index: 1;
+}
+.tooltip:hover .tooltipcontent {
+    visibility: visible;
+}
+
+.edges line {
+  stroke: #333;
+}
+
+text {
+  font-weight: bold;
+}
+
+.nodes text {
+  color: black;
+  pointer-events: none;
+  font-family: sans-serif;
+  font-size: 11px;
+}
+</style>
+
+<script src="https://d3js.org/d3.v4.min.js"></script>
+
+</head>
+<body>
+<h1>TensorFlow Lite Model</h2><table>
+<tr><th>filename</th><td>models/dnn_baseline_quant.tflite</td></tr>
+<tr><th>version</th><td>3</td></tr>
+<tr><th>description</th><td>[77, 76, 73, 82, 32, 67, 111, 110, 118, 101, 114, 116, 101, 100, 46]</td></tr>
+</table>
+<div class='subgraph'><h2>Subgraph 0</h2>
+<h3>Inputs/Outputs</h3>
+<table><tr>
+<tr>
+<th>inputs</th><th>outputs</th></tr>
+<tr>
+<td><span class='tooltip'><span class='tooltipcontent'>40 serving_default_input_1:0 UINT8 [1, 8][-1, 8]<br></span>[40]</span></td>
+<td><span class='tooltip'><span class='tooltipcontent'>41 StatefulPartitionedCall:0 UINT8 [1, 9][-1, 9]<br></span>[41]</span></td>
+</tr>
+</table>
+<h3>Tensors</h3>
+<table><tr>
+<tr>
+<th>index</th><th>name</th><th>type</th><th>shape</th><th>shape_signature</th><th>buffer</th><th>quantization</th></tr>
+<tr>
+<td>0</td><td>serving_default_input_1:0_int8</td>
+<td>INT8</td>
+<td>[1, 8]</td>
+<td>[-1, 8]</td>
+<td>1</td>
+<td>{'details': None, 'details_type': 0, 'max': [7.425524711608887], 'min': [-3.1298704147338867], 'quantized_dimension': 0, 'scale': [0.0413937047123909], 'zero_point': [-52]}</td>
+</tr>
+<tr>
+<td>1</td><td>dense_5/bias</td>
+<td>INT32</td>
+<td>[9]</td>
+<td>None</td>
+<td>2</td>
+<td>{'details': None, 'details_type': 0, 'max': None, 'min': None, 'quantized_dimension': 0, 'scale': [0.0002152210072381422], 'zero_point': [0]}</td>
+</tr>
+<tr>
+<td>2</td><td>dense_4/bias</td>
+<td>INT32</td>
+<td>[20]</td>
+<td>None</td>
+<td>3</td>
+<td>{'details': None, 'details_type': 0, 'max': None, 'min': None, 'quantized_dimension': 0, 'scale': [0.00015044720203150064], 'zero_point': [0]}</td>
+</tr>
+<tr>
+<td>3</td><td>dense_3/bias</td>
+<td>INT32</td>
+<td>[20]</td>
+<td>None</td>
+<td>4</td>
+<td>{'details': None, 'details_type': 0, 'max': None, 'min': None, 'quantized_dimension': 0, 'scale': [0.0001054755921359174], 'zero_point': [0]}</td>
+</tr>
+<tr>
+<td>4</td><td>dense_2/bias</td>
+<td>INT32</td>
+<td>[20]</td>
+<td>None</td>
+<td>5</td>
+<td>{'details': None, 'details_type': 0, 'max': None, 'min': None, 'quantized_dimension': 0, 'scale': [0.0001065343531081453], 'zero_point': [0]}</td>
+</tr>
+<tr>
+<td>5</td><td>dense_1/bias</td>
+<td>INT32</td>
+<td>[20]</td>
+<td>None</td>
+<td>6</td>
+<td>{'details': None, 'details_type': 0, 'max': None, 'min': None, 'quantized_dimension': 0, 'scale': [0.00010754296818049625], 'zero_point': [0]}</td>
+</tr>
+<tr>
+<td>6</td><td>dense/bias</td>
+<td>INT32</td>
+<td>[20]</td>
+<td>None</td>
+<td>7</td>
+<td>{'details': None, 'details_type': 0, 'max': None, 'min': None, 'quantized_dimension': 0, 'scale': [0.0001490103459218517], 'zero_point': [0]}</td>
+</tr>
+<tr>
+<td>7</td><td>std.constant</td>
+<td>INT8</td>
+<td>[20]</td>
+<td>None</td>
+<td>8</td>
+<td>{'details': None, 'details_type': 0, 'max': [4.440877914428711], 'min': [1.2963515520095825], 'quantized_dimension': 0, 'scale': [0.03496754169464111], 'zero_point': [0]}</td>
+</tr>
+<tr>
+<td>8</td><td>std.constant1</td>
+<td>INT8</td>
+<td>[20]</td>
+<td>None</td>
+<td>9</td>
+<td>{'details': None, 'details_type': 0, 'max': [-0.22334502637386322], 'min': [-1.2980637550354004], 'quantized_dimension': 0, 'scale': [0.010220974683761597], 'zero_point': [0]}</td>
+</tr>
+<tr>
+<td>9</td><td>std.constant2</td>
+<td>INT8</td>
+<td>[20]</td>
+<td>None</td>
+<td>10</td>
+<td>{'details': None, 'details_type': 0, 'max': [1.8162564039230347], 'min': [0.8887699246406555], 'quantized_dimension': 0, 'scale': [0.014301231130957603], 'zero_point': [0]}</td>
+</tr>
+<tr>
+<td>10</td><td>std.constant3</td>
+<td>INT8</td>
+<td>[20]</td>
+<td>None</td>
+<td>11</td>
+<td>{'details': None, 'details_type': 0, 'max': [-0.28722333908081055], 'min': [-1.394394874572754], 'quantized_dimension': 0, 'scale': [0.01097948756068945], 'zero_point': [0]}</td>
+</tr>
+<tr>
+<td>11</td><td>std.constant4</td>
+<td>INT8</td>
+<td>[20]</td>
+<td>None</td>
+<td>12</td>
+<td>{'details': None, 'details_type': 0, 'max': [2.003993272781372], 'min': [0.8260008692741394], 'quantized_dimension': 0, 'scale': [0.01577947475016117], 'zero_point': [0]}</td>
+</tr>
+<tr>
+<td>12</td><td>std.constant5</td>
+<td>INT8</td>
+<td>[20]</td>
+<td>None</td>
+<td>13</td>
+<td>{'details': None, 'details_type': 0, 'max': [-0.49356454610824585], 'min': [-1.181659460067749], 'quantized_dimension': 0, 'scale': [0.009304405190050602], 'zero_point': [0]}</td>
+</tr>
+<tr>
+<td>13</td><td>std.constant6</td>
+<td>INT8</td>
+<td>[20]</td>
+<td>None</td>
+<td>14</td>
+<td>{'details': None, 'details_type': 0, 'max': [2.2213847637176514], 'min': [1.2454438209533691], 'quantized_dimension': 0, 'scale': [0.017491217702627182], 'zero_point': [0]}</td>
+</tr>
+<tr>
+<td>14</td><td>std.constant7</td>
+<td>INT8</td>
+<td>[20]</td>
+<td>None</td>
+<td>15</td>
+<td>{'details': None, 'details_type': 0, 'max': [-0.6919246912002563], 'min': [-1.5021870136260986], 'quantized_dimension': 0, 'scale': [0.011828244663774967], 'zero_point': [0]}</td>
+</tr>
+<tr>
+<td>15</td><td>std.constant8</td>
+<td>INT8</td>
+<td>[8]</td>
+<td>None</td>
+<td>16</td>
+<td>{'details': None, 'details_type': 0, 'max': [1.5527185201644897], 'min': [0.3992873430252075], 'quantized_dimension': 0, 'scale': [0.01222612988203764], 'zero_point': [0]}</td>
+</tr>
+<tr>
+<td>16</td><td>std.constant9</td>
+<td>INT8</td>
+<td>[8]</td>
+<td>None</td>
+<td>17</td>
+<td>{'details': None, 'details_type': 0, 'max': [0.21954140067100525], 'min': [-0.04281795397400856], 'quantized_dimension': 0, 'scale': [0.0017286724178120494], 'zero_point': [0]}</td>
+</tr>
+<tr>
+<td>17</td><td>std.constant10</td>
+<td>INT8</td>
+<td>[20, 8]</td>
+<td>None</td>
+<td>18</td>
+<td>{'details': None, 'details_type': 0, 'max': [0.6643854379653931], 'min': [-0.5536418557167053], 'quantized_dimension': 0, 'scale': [0.005231381393969059], 'zero_point': [0]}</td>
+</tr>
+<tr>
+<td>18</td><td>std.constant11</td>
+<td>INT8</td>
+<td>[20, 20]</td>
+<td>None</td>
+<td>19</td>
+<td>{'details': None, 'details_type': 0, 'max': [0.6449583768844604], 'min': [-0.578493595123291], 'quantized_dimension': 0, 'scale': [0.005078412592411041], 'zero_point': [0]}</td>
+</tr>
+<tr>
+<td>19</td><td>std.constant12</td>
+<td>INT8</td>
+<td>[20, 20]</td>
+<td>None</td>
+<td>20</td>
+<td>{'details': None, 'details_type': 0, 'max': [0.6024197936058044], 'min': [-0.521741509437561], 'quantized_dimension': 0, 'scale': [0.004743462894111872], 'zero_point': [0]}</td>
+</tr>
+<tr>
+<td>20</td><td>std.constant13</td>
+<td>INT8</td>
+<td>[20, 20]</td>
+<td>None</td>
+<td>21</td>
+<td>{'details': None, 'details_type': 0, 'max': [0.5198318958282471], 'min': [-0.6979312896728516], 'quantized_dimension': 0, 'scale': [0.005495522171258926], 'zero_point': [0]}</td>
+</tr>
+<tr>
+<td>21</td><td>std.constant14</td>
+<td>INT8</td>
+<td>[20, 20]</td>
+<td>None</td>
+<td>22</td>
+<td>{'details': None, 'details_type': 0, 'max': [0.7042486667633057], 'min': [-0.805107831954956], 'quantized_dimension': 0, 'scale': [0.006339431740343571], 'zero_point': [0]}</td>
+</tr>
+<tr>
+<td>22</td><td>std.constant15</td>
+<td>INT8</td>
+<td>[9, 20]</td>
+<td>None</td>
+<td>23</td>
+<td>{'details': None, 'details_type': 0, 'max': [0.6005154848098755], 'min': [-1.0080310106277466], 'quantized_dimension': 0, 'scale': [0.007937251590192318], 'zero_point': [0]}</td>
+</tr>
+<tr>
+<td>23</td><td>tfl.mul</td>
+<td>INT8</td>
+<td>[1, 8]</td>
+<td>[-1, 8]</td>
+<td>24</td>
+<td>{'details': None, 'details_type': 0, 'max': [3.953083038330078], 'min': [-3.2111690044403076], 'quantized_dimension': 0, 'scale': [0.028095107525587082], 'zero_point': [-14]}</td>
+</tr>
+<tr>
+<td>24</td><td>tfl.add</td>
+<td>INT8</td>
+<td>[1, 8]</td>
+<td>[-1, 8]</td>
+<td>25</td>
+<td>{'details': None, 'details_type': 0, 'max': [4.172624588012695], 'min': [-3.0907797813415527], 'quantized_dimension': 0, 'scale': [0.028483938425779343], 'zero_point': [-19]}</td>
+</tr>
+<tr>
+<td>25</td><td>tfl.fully_connected</td>
+<td>INT8</td>
+<td>[1, 20]</td>
+<td>[-1, 20]</td>
+<td>26</td>
+<td>{'details': None, 'details_type': 0, 'max': [2.6722724437713623], 'min': [0.0], 'quantized_dimension': 0, 'scale': [0.010479499585926533], 'zero_point': [-128]}</td>
+</tr>
+<tr>
+<td>26</td><td>tfl.mul1</td>
+<td>INT8</td>
+<td>[1, 20]</td>
+<td>[-1, 20]</td>
+<td>27</td>
+<td>{'details': None, 'details_type': 0, 'max': [4.696230888366699], 'min': [0.0], 'quantized_dimension': 0, 'scale': [0.018416590988636017], 'zero_point': [-128]}</td>
+</tr>
+<tr>
+<td>27</td><td>tfl.add1</td>
+<td>INT8</td>
+<td>[1, 20]</td>
+<td>[-1, 20]</td>
+<td>28</td>
+<td>{'details': None, 'details_type': 0, 'max': [4.10194206237793], 'min': [-1.2980637550354004], 'quantized_dimension': 0, 'scale': [0.021176492795348167], 'zero_point': [-67]}</td>
+</tr>
+<tr>
+<td>28</td><td>tfl.fully_connected1</td>
+<td>INT8</td>
+<td>[1, 20]</td>
+<td>[-1, 20]</td>
+<td>29</td>
+<td>{'details': None, 'details_type': 0, 'max': [4.191869258880615], 'min': [0.0], 'quantized_dimension': 0, 'scale': [0.01643870212137699], 'zero_point': [-128]}</td>
+</tr>
+<tr>
+<td>29</td><td>tfl.mul2</td>
+<td>INT8</td>
+<td>[1, 20]</td>
+<td>[-1, 20]</td>
+<td>30</td>
+<td>{'details': None, 'details_type': 0, 'max': [5.124581813812256], 'min': [0.0], 'quantized_dimension': 0, 'scale': [0.020096398890018463], 'zero_point': [-128]}</td>
+</tr>
+<tr>
+<td>30</td><td>tfl.add2</td>
+<td>INT8</td>
+<td>[1, 20]</td>
+<td>[-1, 20]</td>
+<td>31</td>
+<td>{'details': None, 'details_type': 0, 'max': [4.332699775695801], 'min': [-1.394394874572754], 'quantized_dimension': 0, 'scale': [0.02245919406414032], 'zero_point': [-66]}</td>
+</tr>
+<tr>
+<td>31</td><td>tfl.fully_connected2</td>
+<td>INT8</td>
+<td>[1, 20]</td>
+<td>[-1, 20]</td>
+<td>32</td>
+<td>{'details': None, 'details_type': 0, 'max': [4.6094207763671875], 'min': [0.0], 'quantized_dimension': 0, 'scale': [0.018076159060001373], 'zero_point': [-128]}</td>
+</tr>
+<tr>
+<td>32</td><td>tfl.mul3</td>
+<td>INT8</td>
+<td>[1, 20]</td>
+<td>[-1, 20]</td>
+<td>33</td>
+<td>{'details': None, 'details_type': 0, 'max': [4.479511737823486], 'min': [0.0], 'quantized_dimension': 0, 'scale': [0.017566712573170662], 'zero_point': [-128]}</td>
+</tr>
+<tr>
+<td>33</td><td>tfl.add3</td>
+<td>INT8</td>
+<td>[1, 20]</td>
+<td>[-1, 20]</td>
+<td>34</td>
+<td>{'details': None, 'details_type': 0, 'max': [3.712556838989258], 'min': [-1.181659460067749], 'quantized_dimension': 0, 'scale': [0.019193006679415703], 'zero_point': [-66]}</td>
+</tr>
+<tr>
+<td>34</td><td>tfl.fully_connected3</td>
+<td>INT8</td>
+<td>[1, 20]</td>
+<td>[-1, 20]</td>
+<td>35</td>
+<td>{'details': None, 'details_type': 0, 'max': [4.023746013641357], 'min': [0.0], 'quantized_dimension': 0, 'scale': [0.015779396519064903], 'zero_point': [-128]}</td>
+</tr>
+<tr>
+<td>35</td><td>tfl.mul4</td>
+<td>INT8</td>
+<td>[1, 20]</td>
+<td>[-1, 20]</td>
+<td>36</td>
+<td>{'details': None, 'details_type': 0, 'max': [5.423929691314697], 'min': [0.0], 'quantized_dimension': 0, 'scale': [0.02127031236886978], 'zero_point': [-128]}</td>
+</tr>
+<tr>
+<td>36</td><td>tfl.add4</td>
+<td>INT8</td>
+<td>[1, 20]</td>
+<td>[-1, 20]</td>
+<td>37</td>
+<td>{'details': None, 'details_type': 0, 'max': [4.549465179443359], 'min': [-1.5021870136260986], 'quantized_dimension': 0, 'scale': [0.02373196929693222], 'zero_point': [-65]}</td>
+</tr>
+<tr>
+<td>37</td><td>tfl.fully_connected4</td>
+<td>INT8</td>
+<td>[1, 20]</td>
+<td>[-1, 20]</td>
+<td>38</td>
+<td>{'details': None, 'details_type': 0, 'max': [6.914402961730957], 'min': [0.0], 'quantized_dimension': 0, 'scale': [0.02711530588567257], 'zero_point': [-128]}</td>
+</tr>
+<tr>
+<td>38</td><td>tfl.fully_connected5</td>
+<td>INT8</td>
+<td>[1, 9]</td>
+<td>[-1, 9]</td>
+<td>39</td>
+<td>{'details': None, 'details_type': 0, 'max': [8.46069622039795], 'min': [-8.300426483154297], 'quantized_dimension': 0, 'scale': [0.06572989374399185], 'zero_point': [-2]}</td>
+</tr>
+<tr>
+<td>39</td><td>StatefulPartitionedCall:0_int8</td>
+<td>INT8</td>
+<td>[1, 9]</td>
+<td>[-1, 9]</td>
+<td>40</td>
+<td>{'details': None, 'details_type': 0, 'max': None, 'min': None, 'quantized_dimension': 0, 'scale': [0.00390625], 'zero_point': [-128]}</td>
+</tr>
+<tr>
+<td>40</td><td>serving_default_input_1:0</td>
+<td>UINT8</td>
+<td>[1, 8]</td>
+<td>[-1, 8]</td>
+<td>0</td>
+<td>{'details': None, 'details_type': 0, 'max': None, 'min': None, 'quantized_dimension': 0, 'scale': [0.0413937047123909], 'zero_point': [76]}</td>
+</tr>
+<tr>
+<td>41</td><td>StatefulPartitionedCall:0</td>
+<td>UINT8</td>
+<td>[1, 9]</td>
+<td>[-1, 9]</td>
+<td>0</td>
+<td>{'details': None, 'details_type': 0, 'max': None, 'min': None, 'quantized_dimension': 0, 'scale': [0.00390625], 'zero_point': [0]}</td>
+</tr>
+</table>
+<h3>Ops</h3>
+<table><tr>
+<tr>
+<th>index</th><th>inputs</th><th>outputs</th><th>builtin_options</th><th>opcode_index</th></tr>
+<tr>
+<td>0</td><td><span class='tooltip'><span class='tooltipcontent'>40 serving_default_input_1:0 UINT8 [1, 8][-1, 8]<br></span>[40]</span></td>
+<td><span class='tooltip'><span class='tooltipcontent'>0 serving_default_input_1:0_int8 INT8 [1, 8][-1, 8]<br></span>[0]</span></td>
+<td>None</td>
+<td>QUANTIZE (4)</td>
+</tr>
+<tr>
+<td>1</td><td><span class='tooltip'><span class='tooltipcontent'>0 serving_default_input_1:0_int8 INT8 [1, 8][-1, 8]<br>15 std.constant8 INT8 [8]None<br></span>[0, 15]</span></td>
+<td><span class='tooltip'><span class='tooltipcontent'>23 tfl.mul INT8 [1, 8][-1, 8]<br></span>[23]</span></td>
+<td>{'fused_activation_function': 0}</td>
+<td>MUL (0)</td>
+</tr>
+<tr>
+<td>2</td><td><span class='tooltip'><span class='tooltipcontent'>23 tfl.mul INT8 [1, 8][-1, 8]<br>16 std.constant9 INT8 [8]None<br></span>[23, 16]</span></td>
+<td><span class='tooltip'><span class='tooltipcontent'>24 tfl.add INT8 [1, 8][-1, 8]<br></span>[24]</span></td>
+<td>{'fused_activation_function': 0, 'pot_scale_int16': True}</td>
+<td>ADD (1)</td>
+</tr>
+<tr>
+<td>3</td><td><span class='tooltip'><span class='tooltipcontent'>24 tfl.add INT8 [1, 8][-1, 8]<br>17 std.constant10 INT8 [20, 8]None<br>6 dense/bias INT32 [20]None<br></span>[24, 17, 6]</span></td>
+<td><span class='tooltip'><span class='tooltipcontent'>25 tfl.fully_connected INT8 [1, 20][-1, 20]<br></span>[25]</span></td>
+<td>{'asymmetric_quantize_inputs': False, 'fused_activation_function': 1, 'keep_num_dims': False, 'weights_format': 0}</td>
+<td>FULLY_CONNECTED (2)</td>
+</tr>
+<tr>
+<td>4</td><td><span class='tooltip'><span class='tooltipcontent'>25 tfl.fully_connected INT8 [1, 20][-1, 20]<br>7 std.constant INT8 [20]None<br></span>[25, 7]</span></td>
+<td><span class='tooltip'><span class='tooltipcontent'>26 tfl.mul1 INT8 [1, 20][-1, 20]<br></span>[26]</span></td>
+<td>{'fused_activation_function': 0}</td>
+<td>MUL (0)</td>
+</tr>
+<tr>
+<td>5</td><td><span class='tooltip'><span class='tooltipcontent'>26 tfl.mul1 INT8 [1, 20][-1, 20]<br>8 std.constant1 INT8 [20]None<br></span>[26, 8]</span></td>
+<td><span class='tooltip'><span class='tooltipcontent'>27 tfl.add1 INT8 [1, 20][-1, 20]<br></span>[27]</span></td>
+<td>{'fused_activation_function': 0, 'pot_scale_int16': True}</td>
+<td>ADD (1)</td>
+</tr>
+<tr>
+<td>6</td><td><span class='tooltip'><span class='tooltipcontent'>27 tfl.add1 INT8 [1, 20][-1, 20]<br>18 std.constant11 INT8 [20, 20]None<br>5 dense_1/bias INT32 [20]None<br></span>[27, 18, 5]</span></td>
+<td><span class='tooltip'><span class='tooltipcontent'>28 tfl.fully_connected1 INT8 [1, 20][-1, 20]<br></span>[28]</span></td>
+<td>{'asymmetric_quantize_inputs': False, 'fused_activation_function': 1, 'keep_num_dims': False, 'weights_format': 0}</td>
+<td>FULLY_CONNECTED (2)</td>
+</tr>
+<tr>
+<td>7</td><td><span class='tooltip'><span class='tooltipcontent'>28 tfl.fully_connected1 INT8 [1, 20][-1, 20]<br>9 std.constant2 INT8 [20]None<br></span>[28, 9]</span></td>
+<td><span class='tooltip'><span class='tooltipcontent'>29 tfl.mul2 INT8 [1, 20][-1, 20]<br></span>[29]</span></td>
+<td>{'fused_activation_function': 0}</td>
+<td>MUL (0)</td>
+</tr>
+<tr>
+<td>8</td><td><span class='tooltip'><span class='tooltipcontent'>29 tfl.mul2 INT8 [1, 20][-1, 20]<br>10 std.constant3 INT8 [20]None<br></span>[29, 10]</span></td>
+<td><span class='tooltip'><span class='tooltipcontent'>30 tfl.add2 INT8 [1, 20][-1, 20]<br></span>[30]</span></td>
+<td>{'fused_activation_function': 0, 'pot_scale_int16': True}</td>
+<td>ADD (1)</td>
+</tr>
+<tr>
+<td>9</td><td><span class='tooltip'><span class='tooltipcontent'>30 tfl.add2 INT8 [1, 20][-1, 20]<br>19 std.constant12 INT8 [20, 20]None<br>4 dense_2/bias INT32 [20]None<br></span>[30, 19, 4]</span></td>
+<td><span class='tooltip'><span class='tooltipcontent'>31 tfl.fully_connected2 INT8 [1, 20][-1, 20]<br></span>[31]</span></td>
+<td>{'asymmetric_quantize_inputs': False, 'fused_activation_function': 1, 'keep_num_dims': False, 'weights_format': 0}</td>
+<td>FULLY_CONNECTED (2)</td>
+</tr>
+<tr>
+<td>10</td><td><span class='tooltip'><span class='tooltipcontent'>31 tfl.fully_connected2 INT8 [1, 20][-1, 20]<br>11 std.constant4 INT8 [20]None<br></span>[31, 11]</span></td>
+<td><span class='tooltip'><span class='tooltipcontent'>32 tfl.mul3 INT8 [1, 20][-1, 20]<br></span>[32]</span></td>
+<td>{'fused_activation_function': 0}</td>
+<td>MUL (0)</td>
+</tr>
+<tr>
+<td>11</td><td><span class='tooltip'><span class='tooltipcontent'>32 tfl.mul3 INT8 [1, 20][-1, 20]<br>12 std.constant5 INT8 [20]None<br></span>[32, 12]</span></td>
+<td><span class='tooltip'><span class='tooltipcontent'>33 tfl.add3 INT8 [1, 20][-1, 20]<br></span>[33]</span></td>
+<td>{'fused_activation_function': 0, 'pot_scale_int16': True}</td>
+<td>ADD (1)</td>
+</tr>
+<tr>
+<td>12</td><td><span class='tooltip'><span class='tooltipcontent'>33 tfl.add3 INT8 [1, 20][-1, 20]<br>20 std.constant13 INT8 [20, 20]None<br>3 dense_3/bias INT32 [20]None<br></span>[33, 20, 3]</span></td>
+<td><span class='tooltip'><span class='tooltipcontent'>34 tfl.fully_connected3 INT8 [1, 20][-1, 20]<br></span>[34]</span></td>
+<td>{'asymmetric_quantize_inputs': False, 'fused_activation_function': 1, 'keep_num_dims': False, 'weights_format': 0}</td>
+<td>FULLY_CONNECTED (2)</td>
+</tr>
+<tr>
+<td>13</td><td><span class='tooltip'><span class='tooltipcontent'>34 tfl.fully_connected3 INT8 [1, 20][-1, 20]<br>13 std.constant6 INT8 [20]None<br></span>[34, 13]</span></td>
+<td><span class='tooltip'><span class='tooltipcontent'>35 tfl.mul4 INT8 [1, 20][-1, 20]<br></span>[35]</span></td>
+<td>{'fused_activation_function': 0}</td>
+<td>MUL (0)</td>
+</tr>
+<tr>
+<td>14</td><td><span class='tooltip'><span class='tooltipcontent'>35 tfl.mul4 INT8 [1, 20][-1, 20]<br>14 std.constant7 INT8 [20]None<br></span>[35, 14]</span></td>
+<td><span class='tooltip'><span class='tooltipcontent'>36 tfl.add4 INT8 [1, 20][-1, 20]<br></span>[36]</span></td>
+<td>{'fused_activation_function': 0, 'pot_scale_int16': True}</td>
+<td>ADD (1)</td>
+</tr>
+<tr>
+<td>15</td><td><span class='tooltip'><span class='tooltipcontent'>36 tfl.add4 INT8 [1, 20][-1, 20]<br>21 std.constant14 INT8 [20, 20]None<br>2 dense_4/bias INT32 [20]None<br></span>[36, 21, 2]</span></td>
+<td><span class='tooltip'><span class='tooltipcontent'>37 tfl.fully_connected4 INT8 [1, 20][-1, 20]<br></span>[37]</span></td>
+<td>{'asymmetric_quantize_inputs': False, 'fused_activation_function': 1, 'keep_num_dims': False, 'weights_format': 0}</td>
+<td>FULLY_CONNECTED (2)</td>
+</tr>
+<tr>
+<td>16</td><td><span class='tooltip'><span class='tooltipcontent'>37 tfl.fully_connected4 INT8 [1, 20][-1, 20]<br>22 std.constant15 INT8 [9, 20]None<br>1 dense_5/bias INT32 [9]None<br></span>[37, 22, 1]</span></td>
+<td><span class='tooltip'><span class='tooltipcontent'>38 tfl.fully_connected5 INT8 [1, 9][-1, 9]<br></span>[38]</span></td>
+<td>{'asymmetric_quantize_inputs': False, 'fused_activation_function': 0, 'keep_num_dims': False, 'weights_format': 0}</td>
+<td>FULLY_CONNECTED (2)</td>
+</tr>
+<tr>
+<td>17</td><td><span class='tooltip'><span class='tooltipcontent'>38 tfl.fully_connected5 INT8 [1, 9][-1, 9]<br></span>[38]</span></td>
+<td><span class='tooltip'><span class='tooltipcontent'>39 StatefulPartitionedCall:0_int8 INT8 [1, 9][-1, 9]<br></span>[39]</span></td>
+<td>{'beta': 1.0}</td>
+<td>SOFTMAX (3)</td>
+</tr>
+<tr>
+<td>18</td><td><span class='tooltip'><span class='tooltipcontent'>39 StatefulPartitionedCall:0_int8 INT8 [1, 9][-1, 9]<br></span>[39]</span></td>
+<td><span class='tooltip'><span class='tooltipcontent'>41 StatefulPartitionedCall:0 UINT8 [1, 9][-1, 9]<br></span>[41]</span></td>
+<td>None</td>
+<td>QUANTIZE (4)</td>
+</tr>
+</table>
+<svg id='subgraph0' width='1600' height='900'></svg>
+
+  <script>
+    function buildGraph() {
+      // Build graph data
+      var graph = {"nodes": [{"id": "o0", "name": "QUANTIZE (4)", "group": 2, "x": 200, "y": 200}, {"id": "o1", "name": "MUL (0)", "group": 2, "x": 200, "y": 400}, {"id": "o2", "name": "ADD (1)", "group": 2, "x": 200, "y": 600}, {"id": "o3", "name": "FULLY_CONNECTED (2)", "group": 2, "x": 200, "y": 800}, {"id": "o4", "name": "MUL (0)", "group": 2, "x": 200, "y": 1000}, {"id": "o5", "name": "ADD (1)", "group": 2, "x": 200, "y": 1200}, {"id": "o6", "name": "FULLY_CONNECTED (2)", "group": 2, "x": 200, "y": 1400}, {"id": "o7", "name": "MUL (0)", "group": 2, "x": 200, "y": 1600}, {"id": "o8", "name": "ADD (1)", "group": 2, "x": 200, "y": 1800}, {"id": "o9", "name": "FULLY_CONNECTED (2)", "group": 2, "x": 200, "y": 2000}, {"id": "o10", "name": "MUL (0)", "group": 2, "x": 200, "y": 2200}, {"id": "o11", "name": "ADD (1)", "group": 2, "x": 200, "y": 2400}, {"id": "o12", "name": "FULLY_CONNECTED (2)", "group": 2, "x": 200, "y": 2600}, {"id": "o13", "name": "MUL (0)", "group": 2, "x": 200, "y": 2800}, {"id": "o14", "name": "ADD (1)", "group": 2, "x": 200, "y": 3000}, {"id": "o15", "name": "FULLY_CONNECTED (2)", "group": 2, "x": 200, "y": 3200}, {"id": "o16", "name": "FULLY_CONNECTED (2)", "group": 2, "x": 200, "y": 3400}, {"id": "o17", "name": "SOFTMAX (3)", "group": 2, "x": 200, "y": 3600}, {"id": "o18", "name": "QUANTIZE (4)", "group": 2, "x": 200, "y": 3800}, {"id": "t0", "name": "[] (0)", "group": 1, "x": 170, "y": 300.0}, {"id": "t1", "name": "[] (1)", "group": 1, "x": 510, "y": 3300.0}, {"id": "t2", "name": "[] (2)", "group": 1, "x": 510, "y": 3100.0}, {"id": "t3", "name": "[] (3)", "group": 1, "x": 510, "y": 2500.0}, {"id": "t4", "name": "[] (4)", "group": 1, "x": 510, "y": 1900.0}, {"id": "t5", "name": "[] (5)", "group": 1, "x": 510, "y": 1300.0}, {"id": "t6", "name": "[] (6)", "group": 1, "x": 510, "y": 700.0}, {"id": "t7", "name": "[] (7)", "group": 1, "x": 340, "y": 900.0}, {"id": "t8", "name": "[] (8)", "group": 1, "x": 340, "y": 1100.0}, {"id": "t9", "name": "[] (9)", "group": 1, "x": 340, "y": 1500.0}, {"id": "t10", "name": "[] (10)", "group": 1, "x": 340, "y": 1700.0}, {"id": "t11", "name": "[] (11)", "group": 1, "x": 340, "y": 2100.0}, {"id": "t12", "name": "[] (12)", "group": 1, "x": 340, "y": 2300.0}, {"id": "t13", "name": "[] (13)", "group": 1, "x": 340, "y": 2700.0}, {"id": "t14", "name": "[] (14)", "group": 1, "x": 340, "y": 2900.0}, {"id": "t15", "name": "[] (15)", "group": 1, "x": 340, "y": 300.0}, {"id": "t16", "name": "[] (16)", "group": 1, "x": 340, "y": 500.0}, {"id": "t17", "name": "[] (17)", "group": 1, "x": 340, "y": 700.0}, {"id": "t18", "name": "[] (18)", "group": 1, "x": 340, "y": 1300.0}, {"id": "t19", "name": "[] (19)", "group": 1, "x": 340, "y": 1900.0}, {"id": "t20", "name": "[] (20)", "group": 1, "x": 340, "y": 2500.0}, {"id": "t21", "name": "[] (21)", "group": 1, "x": 340, "y": 3100.0}, {"id": "t22", "name": "[] (22)", "group": 1, "x": 340, "y": 3300.0}, {"id": "t23", "name": "[] (23)", "group": 1, "x": 170, "y": 500.0}, {"id": "t24", "name": "[] (24)", "group": 1, "x": 170, "y": 700.0}, {"id": "t25", "name": "[] (25)", "group": 1, "x": 170, "y": 900.0}, {"id": "t26", "name": "[] (26)", "group": 1, "x": 170, "y": 1100.0}, {"id": "t27", "name": "[] (27)", "group": 1, "x": 170, "y": 1300.0}, {"id": "t28", "name": "[] (28)", "group": 1, "x": 170, "y": 1500.0}, {"id": "t29", "name": "[] (29)", "group": 1, "x": 170, "y": 1700.0}, {"id": "t30", "name": "[] (30)", "group": 1, "x": 170, "y": 1900.0}, {"id": "t31", "name": "[] (31)", "group": 1, "x": 170, "y": 2100.0}, {"id": "t32", "name": "[] (32)", "group": 1, "x": 170, "y": 2300.0}, {"id": "t33", "name": "[] (33)", "group": 1, "x": 170, "y": 2500.0}, {"id": "t34", "name": "[] (34)", "group": 1, "x": 170, "y": 2700.0}, {"id": "t35", "name": "[] (35)", "group": 1, "x": 170, "y": 2900.0}, {"id": "t36", "name": "[] (36)", "group": 1, "x": 170, "y": 3100.0}, {"id": "t37", "name": "[] (37)", "group": 1, "x": 170, "y": 3300.0}, {"id": "t38", "name": "[] (38)", "group": 1, "x": 170, "y": 3500.0}, {"id": "t39", "name": "[] (39)", "group": 1, "x": 170, "y": 3700.0}, {"id": "t40", "name": "[] (40)", "group": 1, "x": 170, "y": 100.0}, {"id": "t41", "name": "[] (41)", "group": 1, "x": 170, "y": 3900.0}], "edges": [{"source": "t40", "target": "o0"}, {"target": "t0", "source": "o0"}, {"source": "t0", "target": "o1"}, {"source": "t15", "target": "o1"}, {"target": "t23", "source": "o1"}, {"source": "t23", "target": "o2"}, {"source": "t16", "target": "o2"}, {"target": "t24", "source": "o2"}, {"source": "t24", "target": "o3"}, {"source": "t17", "target": "o3"}, {"source": "t6", "target": "o3"}, {"target": "t25", "source": "o3"}, {"source": "t25", "target": "o4"}, {"source": "t7", "target": "o4"}, {"target": "t26", "source": "o4"}, {"source": "t26", "target": "o5"}, {"source": "t8", "target": "o5"}, {"target": "t27", "source": "o5"}, {"source": "t27", "target": "o6"}, {"source": "t18", "target": "o6"}, {"source": "t5", "target": "o6"}, {"target": "t28", "source": "o6"}, {"source": "t28", "target": "o7"}, {"source": "t9", "target": "o7"}, {"target": "t29", "source": "o7"}, {"source": "t29", "target": "o8"}, {"source": "t10", "target": "o8"}, {"target": "t30", "source": "o8"}, {"source": "t30", "target": "o9"}, {"source": "t19", "target": "o9"}, {"source": "t4", "target": "o9"}, {"target": "t31", "source": "o9"}, {"source": "t31", "target": "o10"}, {"source": "t11", "target": "o10"}, {"target": "t32", "source": "o10"}, {"source": "t32", "target": "o11"}, {"source": "t12", "target": "o11"}, {"target": "t33", "source": "o11"}, {"source": "t33", "target": "o12"}, {"source": "t20", "target": "o12"}, {"source": "t3", "target": "o12"}, {"target": "t34", "source": "o12"}, {"source": "t34", "target": "o13"}, {"source": "t13", "target": "o13"}, {"target": "t35", "source": "o13"}, {"source": "t35", "target": "o14"}, {"source": "t14", "target": "o14"}, {"target": "t36", "source": "o14"}, {"source": "t36", "target": "o15"}, {"source": "t21", "target": "o15"}, {"source": "t2", "target": "o15"}, {"target": "t37", "source": "o15"}, {"source": "t37", "target": "o16"}, {"source": "t22", "target": "o16"}, {"source": "t1", "target": "o16"}, {"target": "t38", "source": "o16"}, {"source": "t38", "target": "o17"}, {"target": "t39", "source": "o17"}, {"source": "t39", "target": "o18"}, {"target": "t41", "source": "o18"}]};
+
+      var svg = d3.select("#subgraph0")
+      var width = svg.attr("width");
+      var height = svg.attr("height");
+      // Make the graph scrollable.
+      svg = svg.call(d3.zoom().on("zoom", function() {
+        svg.attr("transform", d3.event.transform);
+      })).append("g");
+
+
+      var color = d3.scaleOrdinal(d3.schemeDark2);
+
+      var simulation = d3.forceSimulation()
+          .force("link", d3.forceLink().id(function(d) {return d.id;}))
+          .force("charge", d3.forceManyBody())
+          .force("center", d3.forceCenter(0.5 * width, 0.5 * height));
+
+      var edge = svg.append("g").attr("class", "edges").selectAll("line")
+        .data(graph.edges).enter().append("path").attr("stroke","black").attr("fill","none")
+
+      // Make the node group
+      var node = svg.selectAll(".nodes")
+        .data(graph.nodes)
+        .enter().append("g")
+        .attr("x", function(d){return d.x})
+        .attr("y", function(d){return d.y})
+        .attr("transform", function(d) {
+          return "translate( " + d.x + ", " + d.y + ")"
+        })
+        .attr("class", "nodes")
+          .call(d3.drag()
+              .on("start", function(d) {
+                if(!d3.event.active) simulation.alphaTarget(1.0).restart();
+                d.fx = d.x;d.fy = d.y;
+              })
+              .on("drag", function(d) {
+                d.fx = d3.event.x; d.fy = d3.event.y;
+              })
+              .on("end", function(d) {
+                if (!d3.event.active) simulation.alphaTarget(0);
+                d.fx = d.fy = null;
+              }));
+      // Within the group, draw a box for the node position and text
+      // on the side.
+
+      var node_width = 150;
+      var node_height = 30;
+
+      node.append("rect")
+          .attr("r", "5px")
+          .attr("width", node_width)
+          .attr("height", node_height)
+          .attr("rx", function(d) { return d.group == 1 ? 1 : 10; })
+          .attr("stroke", "#000000")
+          .attr("fill", function(d) { return d.group == 1 ? "#dddddd" : "#000000"; })
+      node.append("text")
+          .text(function(d) { return d.name; })
+          .attr("x", 5)
+          .attr("y", 20)
+          .attr("fill", function(d) { return d.group == 1 ? "#000000" : "#eeeeee"; })
+      // Setup force parameters and update position callback
+
+
+      var node = svg.selectAll(".nodes")
+        .data(graph.nodes);
+
+      // Bind the links
+      var name_to_g = {}
+      node.each(function(data, index, nodes) {
+        console.log(data.id)
+        name_to_g[data.id] = this;
+      });
+
+      function proc(w, t) {
+        return parseInt(w.getAttribute(t));
+      }
+      edge.attr("d", function(d) {
+        function lerp(t, a, b) {
+          return (1.0-t) * a + t * b;
+        }
+        var x1 = proc(name_to_g[d.source],"x") + node_width /2;
+        var y1 = proc(name_to_g[d.source],"y") + node_height;
+        var x2 = proc(name_to_g[d.target],"x") + node_width /2;
+        var y2 = proc(name_to_g[d.target],"y");
+        var s = "M " + x1 + " " + y1
+            + " C " + x1 + " " + lerp(.5, y1, y2)
+            + " " + x2 + " " + lerp(.5, y1, y2)
+            + " " + x2  + " " + y2
+      return s;
+    });
+
+  }
+  buildGraph()
+</script>
+</div><h2>Buffers</h2>
+<table><tr>
+<tr>
+<th>index</th><th>data</th></tr>
+<tr>
+<td>0</td><td>--</td>
+</tr>
+<tr>
+<td>1</td><td>--</td>
+</tr>
+<tr>
+<td>2</td><td>36 bytes</td>
+</tr>
+<tr>
+<td>3</td><td>80 bytes</td>
+</tr>
+<tr>
+<td>4</td><td>80 bytes</td>
+</tr>
+<tr>
+<td>5</td><td>80 bytes</td>
+</tr>
+<tr>
+<td>6</td><td>80 bytes</td>
+</tr>
+<tr>
+<td>7</td><td>80 bytes</td>
+</tr>
+<tr>
+<td>8</td><td>20 bytes</td>
+</tr>
+<tr>
+<td>9</td><td>20 bytes</td>
+</tr>
+<tr>
+<td>10</td><td>20 bytes</td>
+</tr>
+<tr>
+<td>11</td><td>20 bytes</td>
+</tr>
+<tr>
+<td>12</td><td>20 bytes</td>
+</tr>
+<tr>
+<td>13</td><td>20 bytes</td>
+</tr>
+<tr>
+<td>14</td><td>20 bytes</td>
+</tr>
+<tr>
+<td>15</td><td>20 bytes</td>
+</tr>
+<tr>
+<td>16</td><td>8 bytes</td>
+</tr>
+<tr>
+<td>17</td><td>8 bytes</td>
+</tr>
+<tr>
+<td>18</td><td>160 bytes</td>
+</tr>
+<tr>
+<td>19</td><td>400 bytes</td>
+</tr>
+<tr>
+<td>20</td><td>400 bytes</td>
+</tr>
+<tr>
+<td>21</td><td>400 bytes</td>
+</tr>
+<tr>
+<td>22</td><td>400 bytes</td>
+</tr>
+<tr>
+<td>23</td><td>180 bytes</td>
+</tr>
+<tr>
+<td>24</td><td>--</td>
+</tr>
+<tr>
+<td>25</td><td>--</td>
+</tr>
+<tr>
+<td>26</td><td>--</td>
+</tr>
+<tr>
+<td>27</td><td>--</td>
+</tr>
+<tr>
+<td>28</td><td>--</td>
+</tr>
+<tr>
+<td>29</td><td>--</td>
+</tr>
+<tr>
+<td>30</td><td>--</td>
+</tr>
+<tr>
+<td>31</td><td>--</td>
+</tr>
+<tr>
+<td>32</td><td>--</td>
+</tr>
+<tr>
+<td>33</td><td>--</td>
+</tr>
+<tr>
+<td>34</td><td>--</td>
+</tr>
+<tr>
+<td>35</td><td>--</td>
+</tr>
+<tr>
+<td>36</td><td>--</td>
+</tr>
+<tr>
+<td>37</td><td>--</td>
+</tr>
+<tr>
+<td>38</td><td>--</td>
+</tr>
+<tr>
+<td>39</td><td>--</td>
+</tr>
+<tr>
+<td>40</td><td>--</td>
+</tr>
+<tr>
+<td>41</td><td>16 bytes</td>
+</tr>
+</table>
+<h2>Operator Codes</h2>
+<table><tr>
+<tr>
+<th>index</th><th>builtin_code</th><th>custom_code</th><th>version</th></tr>
+<tr>
+<td>0</td><td>MUL</td>
+<td></td>
+<td>2</td>
+</tr>
+<tr>
+<td>1</td><td>ADD</td>
+<td></td>
+<td>2</td>
+</tr>
+<tr>
+<td>2</td><td>FULLY_CONNECTED</td>
+<td></td>
+<td>4</td>
+</tr>
+<tr>
+<td>3</td><td>SOFTMAX</td>
+<td></td>
+<td>2</td>
+</tr>
+<tr>
+<td>4</td><td>QUANTIZE</td>
+<td></td>
+<td>1</td>
+</tr>
+<tr>
+<td>5</td><td>DEQUANTIZE</td>
+<td></td>
+<td>2</td>
+</tr>
+</table>
+</body></html>
