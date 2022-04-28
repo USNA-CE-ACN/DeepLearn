@@ -56,7 +56,7 @@ def main():
               X_train, Y_train = np.expand_dims(train_full[:,:-1],axis=2), train_full[:,-1]
 
               #read in testing data
-              test_full = np.load("../8vec_rotationfiles/8vec_trainset_round0_rot"+str(x)+".npy")
+              test_full = np.load("../8vec_rotationfiles/8vec_testset_round0_rot"+str(x)+".npy")
               X_test, Y_test = np.expand_dims(test_full[:,:-1],axis=2), test_full[:,-1]
               model = get_model() #make the model
               #train the model and time it
