@@ -1,9 +1,6 @@
 """
 This is for the CNN 1 deg raw data
-New additions:
-- run for 200 epochs
 - new model structure
-- remove validation set
 """
 
 import tensorflow as tf
@@ -16,6 +13,7 @@ from keras.layers import Conv1D, Conv2D, MaxPooling1D, Flatten, Dense, Dropout, 
 def get_model(input_shape = (40,3), num_classes = 9, learning_rate = 1e-4, l2_rate = 1e-4, kernel_size = 1, strides = 1):
 
   model = models.Sequential()
+
 
   model.add(Conv1D(
       64, kernel_size = kernel_size, #kernel size = 1 means we're looking at 1 row at a time (so 1x3)
@@ -67,8 +65,9 @@ def main():
               #train the model and time it
               tic = time.time()
               #try earlystopping
-              history = model.fit(X_train,Y_train,
-                                  batch_size=128,epochs=200)
+              history = model.fit(X_train,Y_train, validation_split = .2,
+                                  callbacks=[tf.keras.callbacks.EarlyStopping(restore_best_weights=True,patience=3)],
+                                  batch_size=128,epochs=50)
               toc = time.time()
               time_round.append(toc-tic) #save timing data for that model
 

@@ -1,10 +1,8 @@
 """
 Jennifer Jung
 This is for the CNN 1 deg 8vec data
-New additions:
-- run for 200 epochs
 - new model structure
-- remove validation set
+
 """
 
 import tensorflow as tf
@@ -65,8 +63,9 @@ def main():
               #train the model and time it
               tic = time.time()
               #try earlystopping
-              history = model.fit(X_train,Y_train,
-                                  batch_size=128,epochs=200)
+              history = model.fit(X_train,Y_train, validation_split = .2,
+                                  callbacks=[tf.keras.callbacks.EarlyStopping(restore_best_weights=True,patience=3)],
+                                  batch_size=128,epochs=50)
               toc = time.time()
               time_round.append(toc-tic) #save timing data for that model
 
