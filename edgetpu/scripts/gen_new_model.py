@@ -3,6 +3,7 @@ import tensorflow as tf
 from tensorflow import keras
 import numpy as np
 import re
+import json
 
 class Operation:
     def __init__(self):
@@ -24,7 +25,7 @@ input_file = sys.argv[1]
 
 os.system("python3 analyze_model.py " + input_file + " > model.analysis")
 # Outputs (sys.argv[1] - .tflite) + .json in local directory
-#os.system("flatc -t --strict-json --defaults-json schema.fbs -- " + sys.argv[1])
+os.system("flatc -t --strict-json --defaults-json schema.fbs -- " + sys.argv[1])
 
 for line in open("model.analysis","r"):
     m = re.match("\s+Op\#(\d+)\s+([A-Z,a-z,0-9,\_,\-]+)\(T\#(\d+),\s(.*)\s\-\>\s\[T\#(\d+)\].*",line)
@@ -59,10 +60,21 @@ for line in open("model.analysis","r"):
         shape = tuple(map(int, m.group(2).split(", ")))
         tensors.append(shape)
 
-sys.exit(1)
-    
-input_size = 100
-X_full = np.random.rand(100,1,224,224,3)
+json_ops = {}
+        
+# Parse JSON to find
+input_json = input_file[input_file.rindex("/")+1:input_file.rindex(".")] + ".json"
+with open(input_json) as f:
+    model_json = json.load(f)
+    sg_ops = model_json["subgraphs"][0]["operators"]
+    for sg_op in sg_ops:
+        # Look up json based on output number to find the rest
+        json_ops[sg_op["outputs"][0]] = sg_op
+
+input = tensors[0]
+
+input_size = (100,)
+X_full = np.random.rand(*(input_size + input))
 rng = np.random.default_rng()
 Y_full = rng.integers(0,1000,100)
 
@@ -79,6 +91,8 @@ keras.backend.clear_session()
 input = (1,224,224,3)
 
 a = tf.keras.layers.Input(shape=input[1:])
+
+sys.exit(1)
 
 #x = keras.layers.InputLayer(input_shape=input)
 b = tf.keras.layers.Conv2D(64,7,(2,2),padding="same",activation="relu",input_shape=input)(a)
