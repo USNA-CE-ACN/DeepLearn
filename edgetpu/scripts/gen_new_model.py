@@ -1,4 +1,6 @@
 import sys,os
+from silence_tensorflow import silence_tensorflow
+silence_tensorflow()
 import tensorflow as tf
 from tensorflow import keras
 import numpy as np
@@ -52,8 +54,17 @@ for line in open("model.analysis","r"):
             for i in inputs:
                 m = re.match("\s*T\#(\d+).*",i)
                 op.input.append(int(m.group(1)))
-
+                
         ops.append(op)
+    else:
+        m = re.match("\s+Op\#(\d+)\s+([A-Z,a-z,0-9,\_,\-]+)\(T\#(\d+)\)\s\-\>\s\[T\#(\d+)\].*",line)
+        if m:
+            op = Operation()
+            op.number = int(m.group(1))
+            op.layer_type = m.group(2)
+            op.input = int(m.group(3))
+            op.output = int(m.group(4))
+            ops.append(op)
 
     m = re.match("\s+T\#(\d+).*shape\:\[([0-9,\,,\s]+)\].*",line)
     if m:
@@ -63,7 +74,8 @@ for line in open("model.analysis","r"):
 json_ops = {}
         
 # Parse JSON to find
-input_json = input_file[input_file.rindex("/")+1:input_file.rindex(".")] + ".json"
+input_name = input_file[input_file.rindex("/")+1:input_file.rindex(".")]
+input_json = input_name + ".json"
 with open(input_json) as f:
     model_json = json.load(f)
     sg_ops = model_json["subgraphs"][0]["operators"]
@@ -78,47 +90,79 @@ X_full = np.random.rand(*(input_size + input))
 rng = np.random.default_rng()
 Y_full = rng.integers(0,1000,100)
 
-print(X_full.shape)
-
 def representative_data_gen():
   for i in range(100):
     yield [X_full[i].astype(np.float32)]
 
 keras.backend.clear_session()
 
-### TODO: Create this model based on the input tflite model ###
-
 input = (1,224,224,3)
 
 a = tf.keras.layers.Input(shape=input[1:])
 
-sys.exit(1)
+layers = {}
+layers[0] = a
 
-#x = keras.layers.InputLayer(input_shape=input)
-b = tf.keras.layers.Conv2D(64,7,(2,2),padding="same",activation="relu",input_shape=input)(a)
-c = tf.keras.layers.MaxPool2D((3,3),(2,2),padding="same",input_shape=b.shape)(b)
-d = tf.keras.layers.Conv2D(64,1,(1,1),padding="same",activation="relu",input_shape=c.shape)(c)
-e = tf.keras.layers.Conv2D(192,3,(1,1),padding="same",activation="relu",input_shape=d.shape)(d)
+for op in ops:
+    if op.layer_type == "CONV_2D":
+        input = layers[op.input]
+        filter = tensors[op.filter]
+        json_op = json_ops[op.output]
+        bops = json_op["builtin_options"]
+        act = None
+        if bops["fused_activation_function"] != "NONE":
+            act = bops["fused_activation_function"].lower()
+        layer = tf.keras.layers.Conv2D(filter[0],(filter[1],filter[2]),
+                                       (bops["stride_w"],bops["stride_h"]),
+                                       padding=bops["padding"].lower(),
+                                       activation=act,
+                                       input_shape=input.shape)(input)
+        layers[op.output] = layer
+    elif op.layer_type == "CONCATENATION":
+        concat_list = []
+        print(op.input)
+        for input in op.input:
+            concat_list.append(layers[input])
+        print(concat_list)
+        layer = tf.keras.layers.Concatenate()(concat_list)
+        layers[op.output] = layer
+    elif op.layer_type == "MAX_POOL_2D":
+        input = layers[op.input]
+        json_op = json_ops[op.output]
+        bops = json_op["builtin_options"]
+        layer = tf.keras.layers.MaxPool2D((bops["filter_width"],bops["filter_height"]),
+                                           (bops["stride_w"],bops["stride_h"]),
+                                           padding=bops["padding"].lower(),
+                                           input_shape=input.shape)(input)
+        layers[op.output] = layer
+    elif op.layer_type == "AVERAGE_POOL_2D":
+        input = layers[op.input]
+        json_op = json_ops[op.output]
+        bops = json_op["builtin_options"]
+        layer = tf.keras.layers.AveragePooling2D(pool_size=(bops["filter_width"],
+                                                            bops["filter_height"]),
+                                                 strides=(bops["stride_w"],bops["stride_h"]),
+                                                 padding=bops["padding"].lower(),
+                                                 input_shape=input.shape)(input)
+        layers[op.output] = layer
+    elif op.layer_type == "RESHAPE":
+        input = layers[op.input]
+        out_shape = tensors[op.output]
+        layer = tf.keras.layers.Reshape(out_shape)(input)
+        layers[op.output] = layer
+    elif op.layer_type == "SOFTMAX":
+        input = layers[op.input]
+        layer = tf.keras.layers.Softmax()(input)
+        layers[op.output] = layer
+    else:
+        print("Unknown layer!")
+        sys.exit(1)
 
-mp = keras.layers.MaxPool2D((3,3),(2,2),padding="same",input_shape=(1,56,56,192))(e)
-
-c1 = keras.layers.Conv2D(64,1,(1,1),padding="same",activation="relu",input_shape=(1,28,28,192))(mp)
-
-c2 = keras.layers.Conv2D(96,1,(1,1),padding="same",activation="relu",input_shape=(1,28,28,192))(mp)
-c2 = keras.layers.Conv2D(128,3,(1,1),padding="same",activation="relu",input_shape=(1,28,28,96))(c2)
-
-c3 = keras.layers.Conv2D(16,1,(1,1),padding="same",activation="relu",input_shape=(1,28,28,192))(mp)
-c3 = keras.layers.Conv2D(32,3,(1,1),padding="same",activation="relu",input_shape=(1,28,28,16))(c3)
-
-c4 = keras.layers.MaxPool2D((3,3),(1,1),padding="same",input_shape=(1,28,28,192))(mp)
-c4 = keras.layers.Conv2D(32,1,(1,1),padding="same",activation="relu",input_shape=(1,28,28,192))(c4)
-
-m = keras.layers.Concatenate()([c1,c2,c3,c4])
-
-model = tf.keras.models.Model(inputs=a,outputs=m)
+model = tf.keras.models.Model(inputs=layers[0],outputs=layers[ops[len(ops)-1].output])
 
 adam = keras.optimizers.Adam(epsilon = 1e-08)
-model.compile(optimizer=adam, loss="sparse_categorical_crossentropy", metrics=["accuracy"])
+#model.compile(optimizer=adam, loss="sparse_categorical_crossentropy", metrics=["accuracy"])
+model.compile()
 
 #history = model.fit(X_full, Y_full, batch_size=128, epochs=1)
 converter = tf.lite.TFLiteConverter.from_keras_model(model) #this works!!!!
@@ -135,5 +179,5 @@ converter.inference_input_type = tf.uint8
 converter.inference_output_type = tf.uint8
 tflite_model = converter.convert()
 
-with open("test.tflite", 'wb') as f:
+with open("new_" + input_name + ".tflite", 'wb') as f:
    f.write(tflite_model)
