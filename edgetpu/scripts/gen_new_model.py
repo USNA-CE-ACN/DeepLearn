@@ -41,20 +41,28 @@ for line in open("model.analysis","r"):
 
         op.output = int(m.group(5))
         
-        if op.layer_type == "CONV_2D" or op.layer_type == "DEPTHWISE_CONV_2D":
+        if op.layer_type == "CONV_2D" or op.layer_type == "DEPTHWISE_CONV_2D" or op.layer_type == "FULLY_CONNECTED":
             m = re.match("T\#(\d+)\,.*",remainder)
             op.filter = int(m.group(1))
-        elif op.layer_type == "CONCATENATION":
+        elif op.layer_type == "CONCATENATION" or op.layer_type == "ADD":
             # Switch input to list of inputs
             tmp = op.input
             op.input = [tmp]
 
             remainder = remainder[0:remainder.index(")")]
+            
             inputs = remainder.split(",")
             for i in inputs:
                 m = re.match("\s*T\#(\d+).*",i)
-                op.input.append(int(m.group(1)))
-                
+                if m:
+                    op.input.append(int(m.group(1)))
+        elif op.layer_type == "MEAN":
+            m = re.match("\s*T\#(\d+)\[(\d+)\,\s(\d+)\].*",remainder)
+            if m:
+                filter = m.group(1)
+            else:
+                print("Failed to parse MEAN!")                    
+                    
         ops.append(op)
     else:
         m = re.match("\s+Op\#(\d+)\s+([A-Z,a-z,0-9,\_,\-]+)\(T\#(\d+)\)\s\-\>\s\[T\#(\d+)\].*",line)
@@ -101,7 +109,7 @@ input = (1,224,224,3)
 a = tf.keras.layers.Input(shape=input[1:])
 
 layers = {}
-layers[0] = a
+layers[ops[0].input] = a
 
 for op in ops:
     if op.layer_type == "CONV_2D" or op.layer_type == "DEPTHWISE_CONV_2D":
@@ -113,6 +121,7 @@ for op in ops:
         if bops["fused_activation_function"] != "NONE":
             act = bops["fused_activation_function"].lower()
         if op.layer_type == "CONV_2D":
+            print(input.shape)
             layer = tf.keras.layers.Conv2D(filter[0],(filter[1],filter[2]),
                                            (bops["stride_w"],bops["stride_h"]),
                                            padding=bops["padding"].lower(),
@@ -125,11 +134,33 @@ for op in ops:
                                                     activation=act,
                                                     input_shape=input.shape)(input)
         layers[op.output] = layer
+    elif op.layer_type == "FULLY_CONNECTED":
+        input = layers[op.input]
+        dim = filter[0]
+        print(dim)
+        json_op = json_ops[op.output]
+        bops = json_op["builtin_options"]
+        print(bops)
+        act = None
+        if bops["fused_activation_function"] != "NONE":
+            act = bops["fused_activation_function"].lower()
+        layer = tf.keras.layers.Dense(dim,act)(input)
+        layers[op.output] = layer
     elif op.layer_type == "CONCATENATION":
         concat_list = []
         for input in op.input:
             concat_list.append(layers[input])
         layer = tf.keras.layers.Concatenate()(concat_list)
+        layers[op.output] = layer
+    elif op.layer_type == "ADD":
+        add_list = []
+        for input in op.input:
+            add_list.append(layers[input])
+        layer = tf.keras.layers.Add()(add_list)
+        layers[op.output] = layer
+    elif op.layer_type == "MEAN":
+        input = layers[op.input]
+        layer = tf.keras.layers.GlobalAveragePooling2D()(input)
         layers[op.output] = layer
     elif op.layer_type == "MAX_POOL_2D":
         input = layers[op.input]
@@ -165,7 +196,7 @@ for op in ops:
         print("Unknown layer: " + op.layer_type + "!")
         sys.exit(1)
 
-model = tf.keras.models.Model(inputs=layers[0],outputs=layers[ops[len(ops)-1].output])
+model = tf.keras.models.Model(inputs=a,outputs=layers[ops[len(ops)-1].output])
 
 adam = keras.optimizers.Adam(epsilon = 1e-08)
 #model.compile(optimizer=adam, loss="sparse_categorical_crossentropy", metrics=["accuracy"])
