@@ -41,7 +41,7 @@ for line in open("model.analysis","r"):
 
         op.output = int(m.group(5))
         
-        if op.layer_type == "CONV_2D":
+        if op.layer_type == "CONV_2D" or op.layer_type == "DEPTHWISE_CONV_2D":
             m = re.match("T\#(\d+)\,.*",remainder)
             op.filter = int(m.group(1))
         elif op.layer_type == "CONCATENATION":
@@ -104,7 +104,7 @@ layers = {}
 layers[0] = a
 
 for op in ops:
-    if op.layer_type == "CONV_2D":
+    if op.layer_type == "CONV_2D" or op.layer_type == "DEPTHWISE_CONV_2D":
         input = layers[op.input]
         filter = tensors[op.filter]
         json_op = json_ops[op.output]
@@ -112,18 +112,23 @@ for op in ops:
         act = None
         if bops["fused_activation_function"] != "NONE":
             act = bops["fused_activation_function"].lower()
-        layer = tf.keras.layers.Conv2D(filter[0],(filter[1],filter[2]),
-                                       (bops["stride_w"],bops["stride_h"]),
-                                       padding=bops["padding"].lower(),
-                                       activation=act,
-                                       input_shape=input.shape)(input)
+        if op.layer_type == "CONV_2D":
+            layer = tf.keras.layers.Conv2D(filter[0],(filter[1],filter[2]),
+                                           (bops["stride_w"],bops["stride_h"]),
+                                           padding=bops["padding"].lower(),
+                                           activation=act,
+                                           input_shape=input.shape)(input)
+        else:
+            layer = tf.keras.layers.DepthwiseConv2D(filter[0],(bops["stride_w"],bops["stride_h"]),
+                                                    padding=bops["padding"].lower(),
+                                                    depth_multiplier=bops["depth_multiplier"],
+                                                    activation=act,
+                                                    input_shape=input.shape)(input)
         layers[op.output] = layer
     elif op.layer_type == "CONCATENATION":
         concat_list = []
-        print(op.input)
         for input in op.input:
             concat_list.append(layers[input])
-        print(concat_list)
         layer = tf.keras.layers.Concatenate()(concat_list)
         layers[op.output] = layer
     elif op.layer_type == "MAX_POOL_2D":
@@ -154,8 +159,10 @@ for op in ops:
         input = layers[op.input]
         layer = tf.keras.layers.Softmax()(input)
         layers[op.output] = layer
+    elif op.layer_type == "QUANTIZE":
+        layers[op.output] = layers[op.input]
     else:
-        print("Unknown layer!")
+        print("Unknown layer: " + op.layer_type + "!")
         sys.exit(1)
 
 model = tf.keras.models.Model(inputs=layers[0],outputs=layers[ops[len(ops)-1].output])
