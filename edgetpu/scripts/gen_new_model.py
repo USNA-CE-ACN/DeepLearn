@@ -22,6 +22,7 @@ class Operation:
         
 ops = []
 tensors = []
+input_tensor = 0
 
 input_file = sys.argv[1]
 
@@ -79,6 +80,11 @@ for line in open("model.analysis","r"):
         shape = tuple(map(int, m.group(2).split(", ")))
         tensors.append(shape)
 
+    m = re.match(".*Subgraph\#\d+\(T\#(\d+)\)\s\-\>\s\[T\#(\d+)\].*",line)
+    if m:
+        input_tensor = int(m.group(1))
+        output_tensor = int(m.group(2))
+
 json_ops = {}
         
 # Parse JSON to find
@@ -91,7 +97,10 @@ with open(input_json) as f:
         # Look up json based on output number to find the rest
         json_ops[sg_op["outputs"][0]] = sg_op
 
-input = tensors[0]
+# TODO: Fix this to use input size from the model!
+print(input_tensor)
+input = tensors[input_tensor]
+print(input)
 
 input_size = (100,)
 X_full = np.random.rand(*(input_size + input))
@@ -103,8 +112,6 @@ def representative_data_gen():
     yield [X_full[i].astype(np.float32)]
 
 keras.backend.clear_session()
-
-input = (1,224,224,3)
 
 a = tf.keras.layers.Input(shape=input[1:])
 
@@ -121,7 +128,6 @@ for op in ops:
         if bops["fused_activation_function"] != "NONE":
             act = bops["fused_activation_function"].lower()
         if op.layer_type == "CONV_2D":
-            print(input.shape)
             layer = tf.keras.layers.Conv2D(filter[0],(filter[1],filter[2]),
                                            (bops["stride_w"],bops["stride_h"]),
                                            padding=bops["padding"].lower(),
@@ -137,10 +143,8 @@ for op in ops:
     elif op.layer_type == "FULLY_CONNECTED":
         input = layers[op.input]
         dim = filter[0]
-        print(dim)
         json_op = json_ops[op.output]
         bops = json_op["builtin_options"]
-        print(bops)
         act = None
         if bops["fused_activation_function"] != "NONE":
             act = bops["fused_activation_function"].lower()
