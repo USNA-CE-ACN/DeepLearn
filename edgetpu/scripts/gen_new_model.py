@@ -115,6 +115,27 @@ keras.backend.clear_session()
 
 a = tf.keras.layers.Input(shape=input[1:])
 
+for onum in range(0,len(ops)):
+    print(str(onum) + ": " + op.layer_type)
+
+firstLayerRep = input("\nEnter the number of the first layer you want to replicate")
+lastLayerRep = input("Enter the number of the last layer you want to replicate (same number as first if repeating single layer")
+
+firstLayerRemove = input("Enter the number of the first layer you want to remove")
+lastLayerRemove = input("Enter the number of the last layer you want to remove")
+
+# First, extract the layers that we'll want to repeat
+repeat_ops = []
+
+for onum in range(int(firstLayerRep),int(lastLayerRep)+1):
+    repeat_ops.append(ops[onum])
+
+# Remove the existing layers
+del ops[int(firstLayerRemove):int(lastLayerRemove)]
+
+# Now, clone layers at the insertion point and generate models
+# TODO
+
 layers = {}
 layers[ops[0].input] = a
 
