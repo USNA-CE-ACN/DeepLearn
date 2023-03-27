@@ -12,13 +12,46 @@ class Operation:
         self.layer_type = ""
         # Tensor numbers for input, shape (Conv2D), and output
         self.number = 0
-        self.input = 0
+        self.op_input = []
+        self.op_output = []
+        self.input_num = 0
         self.filter = 0
         self.output = 0
         self.stride_w = 0
         self.stride_h = 0
         self.padding = ""
         self.activation = ""
+
+def replace_operations(op_list, x, y, a, b, M):
+    # Remove operations numbered x to y from the list
+    removed_ops = op_list[x:y+1]
+    for op in removed_ops:
+        if op.op_input:
+            op.op_input.op_output = op.op_output
+        if op.op_output:
+            op.op_output.op_input = op.op_input
+    del op_list[x:y+1]
+    
+    # Generate a new list of operations to replace the removed ones
+    new_ops = [op.__class__() for i in range(M) for op in op_list[a:b+1]]
+    
+    # Update the op_input and op_output members of the new operations
+    for i in range(len(new_ops)):
+        if i == 0:
+            new_ops[i].op_input = removed_ops[0].op_input
+        else:
+            new_ops[i].op_input = new_ops[i-1]
+        if i == len(new_ops) - 1:
+            new_ops[i].op_output = removed_ops[-1].op_output
+        else:
+            new_ops[i].op_output = new_ops[i+1]
+
+    # Insert the new operations into the original list
+    if removed_ops[0].op_input:
+        removed_ops[0].op_input.op_output = new_ops[0]
+    if removed_ops[-1].op_output:
+        removed_ops[-1].op_output.op_input = new_ops[-1]
+    op_list[x:x] = new_ops
         
 ops = []
 tensors = []
@@ -36,7 +69,7 @@ for line in open("model.analysis","r"):
         op = Operation()
         op.number = int(m.group(1))
         op.layer_type = m.group(2)
-        op.input = int(m.group(3))
+        op.input_num = int(m.group(3))
         
         remainder = m.group(4)
 
@@ -47,8 +80,8 @@ for line in open("model.analysis","r"):
             op.filter = int(m.group(1))
         elif op.layer_type == "CONCATENATION" or op.layer_type == "ADD":
             # Switch input to list of inputs
-            tmp = op.input
-            op.input = [tmp]
+            tmp = op.input_num
+            op.input_num = [tmp]
 
             remainder = remainder[0:remainder.index(")")]
             
@@ -56,7 +89,7 @@ for line in open("model.analysis","r"):
             for i in inputs:
                 m = re.match("\s*T\#(\d+).*",i)
                 if m:
-                    op.input.append(int(m.group(1)))
+                    op.input_num.append(int(m.group(1)))
         elif op.layer_type == "MEAN":
             m = re.match("\s*T\#(\d+)\[(\d+)\,\s(\d+)\].*",remainder)
             if m:
@@ -71,7 +104,7 @@ for line in open("model.analysis","r"):
             op = Operation()
             op.number = int(m.group(1))
             op.layer_type = m.group(2)
-            op.input = int(m.group(3))
+            op.input_num = int(m.group(3))
             op.output = int(m.group(4))
             ops.append(op)
 
@@ -118,11 +151,11 @@ a = tf.keras.layers.Input(shape=input[1:])
 for onum in range(0,len(ops)):
     print(str(onum) + ": " + op.layer_type)
 
-firstLayerRep = input("\nEnter the number of the first layer you want to replicate")
-lastLayerRep = input("Enter the number of the last layer you want to replicate (same number as first if repeating single layer")
+firstLayerRep = int(input("\nEnter the number of the first layer you want to replicate"))
+lastLayerRep = int(input("Enter the number of the last layer you want to replicate (same number as first if repeating single layer"))
 
-firstLayerRemove = input("Enter the number of the first layer you want to remove")
-lastLayerRemove = input("Enter the number of the last layer you want to remove")
+firstLayerRemove = int(input("Enter the number of the first layer you want to remove"))
+lastLayerRemove = int(input("Enter the number of the last layer you want to remove"))
 
 # First, extract the layers that we'll want to repeat
 repeat_ops = []
@@ -137,11 +170,11 @@ del ops[int(firstLayerRemove):int(lastLayerRemove)]
 # TODO
 
 layers = {}
-layers[ops[0].input] = a
+layers[ops[0].input_num] = a
 
 for op in ops:
     if op.layer_type == "CONV_2D" or op.layer_type == "DEPTHWISE_CONV_2D":
-        input = layers[op.input]
+        input = layers[op.input_num]
         filter = tensors[op.filter]
         json_op = json_ops[op.output]
         bops = json_op["builtin_options"]
@@ -162,7 +195,7 @@ for op in ops:
                                                     input_shape=input.shape)(input)
         layers[op.output] = layer
     elif op.layer_type == "FULLY_CONNECTED":
-        input = layers[op.input]
+        input = layers[op.input_num]
         dim = filter[0]
         json_op = json_ops[op.output]
         bops = json_op["builtin_options"]
@@ -173,22 +206,22 @@ for op in ops:
         layers[op.output] = layer
     elif op.layer_type == "CONCATENATION":
         concat_list = []
-        for input in op.input:
+        for input in op.input_num:
             concat_list.append(layers[input])
         layer = tf.keras.layers.Concatenate()(concat_list)
         layers[op.output] = layer
     elif op.layer_type == "ADD":
         add_list = []
-        for input in op.input:
+        for input in op.input_num:
             add_list.append(layers[input])
         layer = tf.keras.layers.Add()(add_list)
         layers[op.output] = layer
     elif op.layer_type == "MEAN":
-        input = layers[op.input]
+        input = layers[op.input_num]
         layer = tf.keras.layers.GlobalAveragePooling2D()(input)
         layers[op.output] = layer
     elif op.layer_type == "MAX_POOL_2D":
-        input = layers[op.input]
+        input = layers[op.input_num]
         json_op = json_ops[op.output]
         bops = json_op["builtin_options"]
         layer = tf.keras.layers.MaxPool2D((bops["filter_width"],bops["filter_height"]),
@@ -197,7 +230,7 @@ for op in ops:
                                            input_shape=input.shape)(input)
         layers[op.output] = layer
     elif op.layer_type == "AVERAGE_POOL_2D":
-        input = layers[op.input]
+        input = layers[op.input_num]
         json_op = json_ops[op.output]
         bops = json_op["builtin_options"]
         layer = tf.keras.layers.AveragePooling2D(pool_size=(bops["filter_width"],
@@ -207,16 +240,16 @@ for op in ops:
                                                  input_shape=input.shape)(input)
         layers[op.output] = layer
     elif op.layer_type == "RESHAPE":
-        input = layers[op.input]
+        input = layers[op.input_num]
         out_shape = tensors[op.output]
         layer = tf.keras.layers.Reshape(out_shape)(input)
         layers[op.output] = layer
     elif op.layer_type == "SOFTMAX":
-        input = layers[op.input]
+        input = layers[op.input_num]
         layer = tf.keras.layers.Softmax()(input)
         layers[op.output] = layer
     elif op.layer_type == "QUANTIZE":
-        layers[op.output] = layers[op.input]
+        layers[op.output] = layers[op.input_num]
     else:
         print("Unknown layer: " + op.layer_type + "!")
         sys.exit(1)
