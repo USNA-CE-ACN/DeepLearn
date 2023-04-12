@@ -5,22 +5,9 @@ import tensorflow as tf
 from tensorflow import keras
 import numpy as np
 import re
-import json
 
-class Operation:
-    def __init__(self):
-        self.layer_type = ""
-        # Tensor numbers for input, shape (Conv2D), and output
-        self.number = 0
-        self.op_input = []
-        self.op_output = []
-        self.input_num = 0
-        self.filter = 0
-        self.output = 0
-        self.stride_w = 0
-        self.stride_h = 0
-        self.padding = ""
-        self.activation = ""
+from utility.parse_tf_json import *
+from utility.parse_tf_analysis import *
 
 def replace_operations(op_list, x, y, a, b, M):
     # Remove operations numbered x to y from the list
@@ -52,91 +39,19 @@ def replace_operations(op_list, x, y, a, b, M):
     if removed_ops[-1].op_output:
         removed_ops[-1].op_output.op_input = new_ops[-1]
     op_list[x:x] = new_ops
-        
-ops = []
-tensors = []
-input_tensor = 0
 
 input_file = sys.argv[1]
+generate_analysis_file(input_file)
+generate_json_file(input_file)
 
-os.system("python3 analyze_model.py " + input_file + " > model.analysis")
-# Outputs (sys.argv[1] - .tflite) + .json in local directory
-os.system("flatc -t --strict-json --defaults-json schema.fbs -- " + sys.argv[1])
+(ops,tensors,input_tensor) = parse_analysis_file()
 
-for line in open("model.analysis","r"):
-    m = re.match("\s+Op\#(\d+)\s+([A-Z,a-z,0-9,\_,\-]+)\(T\#(\d+),\s(.*)\s\-\>\s\[T\#(\d+)\].*",line)
-    if m:
-        op = Operation()
-        op.number = int(m.group(1))
-        op.layer_type = m.group(2)
-        op.input_num = int(m.group(3))
+json_ops = parse_json_file(input_file)
         
-        remainder = m.group(4)
-
-        op.output = int(m.group(5))
-        
-        if op.layer_type == "CONV_2D" or op.layer_type == "DEPTHWISE_CONV_2D" or op.layer_type == "FULLY_CONNECTED":
-            m = re.match("T\#(\d+)\,.*",remainder)
-            op.filter = int(m.group(1))
-        elif op.layer_type == "CONCATENATION" or op.layer_type == "ADD":
-            # Switch input to list of inputs
-            tmp = op.input_num
-            op.input_num = [tmp]
-
-            remainder = remainder[0:remainder.index(")")]
-            
-            inputs = remainder.split(",")
-            for i in inputs:
-                m = re.match("\s*T\#(\d+).*",i)
-                if m:
-                    op.input_num.append(int(m.group(1)))
-        elif op.layer_type == "MEAN":
-            m = re.match("\s*T\#(\d+)\[(\d+)\,\s(\d+)\].*",remainder)
-            if m:
-                filter = m.group(1)
-            else:
-                print("Failed to parse MEAN!")                    
-                    
-        ops.append(op)
-    else:
-        m = re.match("\s+Op\#(\d+)\s+([A-Z,a-z,0-9,\_,\-]+)\(T\#(\d+)\)\s\-\>\s\[T\#(\d+)\].*",line)
-        if m:
-            op = Operation()
-            op.number = int(m.group(1))
-            op.layer_type = m.group(2)
-            op.input_num = int(m.group(3))
-            op.output = int(m.group(4))
-            ops.append(op)
-
-    m = re.match("\s+T\#(\d+).*shape\:\[([0-9,\,,\s]+)\].*",line)
-    if m:
-        shape = tuple(map(int, m.group(2).split(", ")))
-        tensors.append(shape)
-
-    m = re.match(".*Subgraph\#\d+\(T\#(\d+)\)\s\-\>\s\[T\#(\d+)\].*",line)
-    if m:
-        input_tensor = int(m.group(1))
-        output_tensor = int(m.group(2))
-
-json_ops = {}
-        
-# Parse JSON to find
-input_name = input_file[input_file.rindex("/")+1:input_file.rindex(".")]
-input_json = input_name + ".json"
-with open(input_json) as f:
-    model_json = json.load(f)
-    sg_ops = model_json["subgraphs"][0]["operators"]
-    for sg_op in sg_ops:
-        # Look up json based on output number to find the rest
-        json_ops[sg_op["outputs"][0]] = sg_op
-
-# TODO: Fix this to use input size from the model!
-print(input_tensor)
-input = tensors[input_tensor]
-print(input)
+first_input = tensors[input_tensor]
 
 input_size = (100,)
-X_full = np.random.rand(*(input_size + input))
+X_full = np.random.rand(*(input_size + first_input))
 rng = np.random.default_rng()
 Y_full = rng.integers(0,1000,100)
 
@@ -146,16 +61,16 @@ def representative_data_gen():
 
 keras.backend.clear_session()
 
-a = tf.keras.layers.Input(shape=input[1:])
+a = tf.keras.layers.Input(shape=first_input[1:])
 
 for onum in range(0,len(ops)):
-    print(str(onum) + ": " + op.layer_type)
+    print(str(onum) + ": " + ops[onum].layer_type)
 
-firstLayerRep = int(input("\nEnter the number of the first layer you want to replicate"))
-lastLayerRep = int(input("Enter the number of the last layer you want to replicate (same number as first if repeating single layer"))
+firstLayerRep = int(input("\nEnter the number of the first layer you want to replicate: "))
+lastLayerRep = int(input("Enter the number of the last layer you want to replicate (same number as first if repeating single layer: "))
 
-firstLayerRemove = int(input("Enter the number of the first layer you want to remove"))
-lastLayerRemove = int(input("Enter the number of the last layer you want to remove"))
+firstLayerRemove = int(input("Enter the number of the first layer you want to remove: "))
+lastLayerRemove = int(input("Enter the number of the last layer you want to remove: "))
 
 # First, extract the layers that we'll want to repeat
 repeat_ops = []
