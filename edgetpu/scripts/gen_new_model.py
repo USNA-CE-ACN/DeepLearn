@@ -9,44 +9,15 @@ import re
 from utility.parse_tf_json import *
 from utility.parse_tf_analysis import *
 
-def replace_operations(op_list, x, y, a, b, M):
-    # Remove operations numbered x to y from the list
-    removed_ops = op_list[x:y+1]
-    for op in removed_ops:
-        if op.op_input:
-            op.op_input.op_output = op.op_output
-        if op.op_output:
-            op.op_output.op_input = op.op_input
-    del op_list[x:y+1]
-    
-    # Generate a new list of operations to replace the removed ones
-    new_ops = [op.__class__() for i in range(M) for op in op_list[a:b+1]]
-    
-    # Update the op_input and op_output members of the new operations
-    for i in range(len(new_ops)):
-        if i == 0:
-            new_ops[i].op_input = removed_ops[0].op_input
-        else:
-            new_ops[i].op_input = new_ops[i-1]
-        if i == len(new_ops) - 1:
-            new_ops[i].op_output = removed_ops[-1].op_output
-        else:
-            new_ops[i].op_output = new_ops[i+1]
-
-    # Insert the new operations into the original list
-    if removed_ops[0].op_input:
-        removed_ops[0].op_input.op_output = new_ops[0]
-    if removed_ops[-1].op_output:
-        removed_ops[-1].op_output.op_input = new_ops[-1]
-    op_list[x:x] = new_ops
-
 input_file = sys.argv[1]
 generate_analysis_file(input_file)
 generate_json_file(input_file)
 
 (ops,tensors,input_tensor) = parse_analysis_file()
 
-json_ops = parse_json_file(input_file)
+input_name = input_file[input_file.rindex("/")+1:input_file.rindex(".")]
+input_json = input_name + ".json"
+json_ops = parse_json_file(input_json)
         
 first_input = tensors[input_tensor]
 
@@ -62,6 +33,10 @@ def representative_data_gen():
 keras.backend.clear_session()
 
 a = tf.keras.layers.Input(shape=first_input[1:])
+first_op = Operation()
+first_op.layer_type = "INPUT"
+first_op.output_layer = a
+ops[0].op_input.append(first_op)
 
 for onum in range(0,len(ops)):
     print(str(onum) + ": " + ops[onum].layer_type)
@@ -73,103 +48,111 @@ firstLayerRemove = int(input("Enter the number of the first layer you want to re
 lastLayerRemove = int(input("Enter the number of the last layer you want to remove: "))
 
 # First, extract the layers that we'll want to repeat
-repeat_ops = []
+repeat_ops = ops[firstLayerRep:lastLayerRep+1]
 
-for onum in range(int(firstLayerRep),int(lastLayerRep)+1):
-    repeat_ops.append(ops[onum])
+front_ops = ops[0:firstLayerRemove]
+back_ops = ops[lastLayerRemove+1:]
 
-# Remove the existing layers
-del ops[int(firstLayerRemove):int(lastLayerRemove)]
+# This only works well with single input operations
+repeat_ops[0].op_input = [front_ops[-1]]
+back_ops[0].op_input = [repeat_ops[-1]]
+
+print("READY")
+print_op(front_ops[-1])
+print_op(repeat_ops[0])
+print_op(repeat_ops[-1])
+print_op(back_ops[0])
+print("SET")
+         
+ops = front_ops + repeat_ops + back_ops
 
 # Now, clone layers at the insertion point and generate models
-# TODO
-
-layers = {}
-layers[ops[0].input_num] = a
-
 for op in ops:
-    if op.layer_type == "CONV_2D" or op.layer_type == "DEPTHWISE_CONV_2D":
-        input = layers[op.input_num]
-        filter = tensors[op.filter]
-        json_op = json_ops[op.output]
-        bops = json_op["builtin_options"]
-        act = None
-        if bops["fused_activation_function"] != "NONE":
-            act = bops["fused_activation_function"].lower()
-        if op.layer_type == "CONV_2D":
-            layer = tf.keras.layers.Conv2D(filter[0],(filter[1],filter[2]),
-                                           (bops["stride_w"],bops["stride_h"]),
-                                           padding=bops["padding"].lower(),
-                                           activation=act,
-                                           input_shape=input.shape)(input)
-        else:
-            layer = tf.keras.layers.DepthwiseConv2D(filter[0],(bops["stride_w"],bops["stride_h"]),
-                                                    padding=bops["padding"].lower(),
-                                                    depth_multiplier=bops["depth_multiplier"],
-                                                    activation=act,
-                                                    input_shape=input.shape)(input)
-        layers[op.output] = layer
-    elif op.layer_type == "FULLY_CONNECTED":
-        input = layers[op.input_num]
-        dim = filter[0]
-        json_op = json_ops[op.output]
-        bops = json_op["builtin_options"]
-        act = None
-        if bops["fused_activation_function"] != "NONE":
-            act = bops["fused_activation_function"].lower()
-        layer = tf.keras.layers.Dense(dim,act)(input)
-        layers[op.output] = layer
-    elif op.layer_type == "CONCATENATION":
-        concat_list = []
-        for input in op.input_num:
-            concat_list.append(layers[input])
-        layer = tf.keras.layers.Concatenate()(concat_list)
-        layers[op.output] = layer
-    elif op.layer_type == "ADD":
-        add_list = []
-        for input in op.input_num:
-            add_list.append(layers[input])
-        layer = tf.keras.layers.Add()(add_list)
-        layers[op.output] = layer
-    elif op.layer_type == "MEAN":
-        input = layers[op.input_num]
-        layer = tf.keras.layers.GlobalAveragePooling2D()(input)
-        layers[op.output] = layer
-    elif op.layer_type == "MAX_POOL_2D":
-        input = layers[op.input_num]
-        json_op = json_ops[op.output]
-        bops = json_op["builtin_options"]
-        layer = tf.keras.layers.MaxPool2D((bops["filter_width"],bops["filter_height"]),
-                                           (bops["stride_w"],bops["stride_h"]),
-                                           padding=bops["padding"].lower(),
-                                           input_shape=input.shape)(input)
-        layers[op.output] = layer
-    elif op.layer_type == "AVERAGE_POOL_2D":
-        input = layers[op.input_num]
-        json_op = json_ops[op.output]
-        bops = json_op["builtin_options"]
-        layer = tf.keras.layers.AveragePooling2D(pool_size=(bops["filter_width"],
-                                                            bops["filter_height"]),
-                                                 strides=(bops["stride_w"],bops["stride_h"]),
-                                                 padding=bops["padding"].lower(),
-                                                 input_shape=input.shape)(input)
-        layers[op.output] = layer
-    elif op.layer_type == "RESHAPE":
-        input = layers[op.input_num]
-        out_shape = tensors[op.output]
-        layer = tf.keras.layers.Reshape(out_shape)(input)
-        layers[op.output] = layer
-    elif op.layer_type == "SOFTMAX":
-        input = layers[op.input_num]
-        layer = tf.keras.layers.Softmax()(input)
-        layers[op.output] = layer
-    elif op.layer_type == "QUANTIZE":
-        layers[op.output] = layers[op.input_num]
+  print_op(op)
+  if op.layer_type == "CONV_2D" or op.layer_type == "DEPTHWISE_CONV_2D":
+    input = op.op_input[0].output_layer
+    filter = tensors[op.filter]
+    json_op = json_ops[op.output]
+    bops = json_op["builtin_options"]
+    act = None
+    if bops["fused_activation_function"] != "NONE":
+      act = bops["fused_activation_function"].lower()
+    if op.layer_type == "CONV_2D":
+      layer = tf.keras.layers.Conv2D(filter[0],(filter[1],filter[2]),
+                                     (bops["stride_w"],bops["stride_h"]),
+                                     padding=bops["padding"].lower(),
+                                     activation=act,
+                                     input_shape=input.shape)(input)
     else:
-        print("Unknown layer: " + op.layer_type + "!")
-        sys.exit(1)
+      layer = tf.keras.layers.DepthwiseConv2D(filter[0],(bops["stride_w"],bops["stride_h"]),
+                                              padding=bops["padding"].lower(),
+                                              depth_multiplier=bops["depth_multiplier"],
+                                              activation=act,
+                                              input_shape=input.shape)(input)
+    op.output_layer = layer
+  elif op.layer_type == "FULLY_CONNECTED":
+    input = op.op_input[0].output_layer
+    dim = filter[0]
+    json_op = json_ops[op.output]
+    bops = json_op["builtin_options"]
+    act = None
+    if bops["fused_activation_function"] != "NONE":
+      act = bops["fused_activation_function"].lower()
+    layer = tf.keras.layers.Dense(dim,act)(input)
+    op.output_layer = layer
+  elif op.layer_type == "CONCATENATION":
+    concat_list = []
+    for input_op in op.op_input:
+      concat_list.append(input_op.output_layer)
+    layer = tf.keras.layers.Concatenate()(concat_list)
+    op.output_layer = layer
+  elif op.layer_type == "ADD":
+    add_list = []
+    for input_op in op.op_input:
+      add_list.append(input_op.output_layer)
+    layer = tf.keras.layers.Add()(add_list)
+    op.output_layer = layer
+  elif op.layer_type == "MEAN":
+    input = op.op_input[0].output_layer
+    layer = tf.keras.layers.GlobalAveragePooling2D()(input)
+    op.output_layer = layer
+  elif op.layer_type == "MAX_POOL_2D":
+    input = op.op_input[0].output_layer
+    json_op = json_ops[op.output]
+    bops = json_op["builtin_options"]
+    layer = tf.keras.layers.MaxPool2D((bops["filter_width"],bops["filter_height"]),
+                                      (bops["stride_w"],bops["stride_h"]),
+                                      padding=bops["padding"].lower(),
+                                      input_shape=input.shape)(input)
+    op.output_layer = layer
+  elif op.layer_type == "AVERAGE_POOL_2D":
+    input = op.op_input[0].output_layer
+    json_op = json_ops[op.output]
+    bops = json_op["builtin_options"]
+    layer = tf.keras.layers.AveragePooling2D(pool_size=(bops["filter_width"],
+                                                        bops["filter_height"]),
+                                             strides=(bops["stride_w"],bops["stride_h"]),
+                                             padding=bops["padding"].lower(),
+                                             input_shape=input.shape)(input)
+    op.output_layer = layer
+  elif op.layer_type == "RESHAPE":
+    input = op.op_input[0].output_layer
+    out_shape = tensors[op.output]
+    layer = tf.keras.layers.Reshape(out_shape)(input)
+    op.output_layer = layer
+  elif op.layer_type == "SOFTMAX":
+    input = op.op_input[0].output_layer
+    print(input)
+    layer = tf.keras.layers.Softmax()(input)
+    op.output_layer = layer
+  elif op.layer_type == "QUANTIZE":
+    # TODO: Skipping for now
+    op.output_layer = op.op_input[0].output_layer
+  else:
+    print("Unknown layer: " + op.layer_type + "!")
+    sys.exit(1)
 
-model = tf.keras.models.Model(inputs=a,outputs=layers[ops[len(ops)-1].output])
+model = tf.keras.models.Model(inputs=a,outputs=ops[len(ops)-1].output_layer)
 
 adam = keras.optimizers.Adam(epsilon = 1e-08)
 #model.compile(optimizer=adam, loss="sparse_categorical_crossentropy", metrics=["accuracy"])
