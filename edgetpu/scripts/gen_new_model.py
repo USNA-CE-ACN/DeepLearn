@@ -5,7 +5,9 @@ import tensorflow as tf
 from tensorflow import keras
 import numpy as np
 import re
+import copy
 
+from utility.create_model import *
 from utility.parse_tf_json import *
 from utility.parse_tf_analysis import *
 
@@ -20,23 +22,15 @@ input_json = input_name + ".json"
 json_ops = parse_json_file(input_json)
         
 first_input = tensors[input_tensor]
-
-input_size = (100,)
-X_full = np.random.rand(*(input_size + first_input))
-rng = np.random.default_rng()
-Y_full = rng.integers(0,1000,100)
-
-def representative_data_gen():
-  for i in range(100):
-    yield [X_full[i].astype(np.float32)]
+set_first_input(first_input)
 
 keras.backend.clear_session()
 
-a = tf.keras.layers.Input(shape=first_input[1:])
+model_input = tf.keras.layers.Input(shape=first_input[1:])
 first_op = Operation()
 first_op.layer_type = "INPUT"
-first_op.output_layer = a
-ops[0].op_input.append(first_op)
+first_op.output_layer = model_input
+ops[0].op_input = [first_op]
 
 for onum in range(0,len(ops)):
     print(str(onum) + ": " + ops[onum].layer_type)
@@ -55,123 +49,35 @@ back_ops = ops[lastLayerRemove+1:]
 
 # This only works well with single input operations
 repeat_ops[0].op_input = [front_ops[-1]]
+
+ops = front_ops + back_ops
+back_ops[0].op_input = [front_ops[-1]]
+
+model = create_model(ops,tensors,json_ops,model_input)
+output_model(model,"0_" + input_name + ".tflite")
+
+# Fix back_ops for repeating
 back_ops[0].op_input = [repeat_ops[-1]]
 
-print("READY")
-print_op(front_ops[-1])
-print_op(repeat_ops[0])
-print_op(repeat_ops[-1])
-print_op(back_ops[0])
-print("SET")
-         
-ops = front_ops + repeat_ops + back_ops
+for i in range(1,21):
+  keras.backend.clear_session()
+  model_input = tf.keras.layers.Input(shape=first_input[1:])
+  first_op = Operation()
+  first_op.layer_type = "INPUT"
+  first_op.output_layer = model_input
 
-# Now, clone layers at the insertion point and generate models
-for op in ops:
-  print_op(op)
-  if op.layer_type == "CONV_2D" or op.layer_type == "DEPTHWISE_CONV_2D":
-    input = op.op_input[0].output_layer
-    filter = tensors[op.filter]
-    json_op = json_ops[op.output]
-    bops = json_op["builtin_options"]
-    act = None
-    if bops["fused_activation_function"] != "NONE":
-      act = bops["fused_activation_function"].lower()
-    if op.layer_type == "CONV_2D":
-      layer = tf.keras.layers.Conv2D(filter[0],(filter[1],filter[2]),
-                                     (bops["stride_w"],bops["stride_h"]),
-                                     padding=bops["padding"].lower(),
-                                     activation=act,
-                                     input_shape=input.shape)(input)
-    else:
-      layer = tf.keras.layers.DepthwiseConv2D(filter[0],(bops["stride_w"],bops["stride_h"]),
-                                              padding=bops["padding"].lower(),
-                                              depth_multiplier=bops["depth_multiplier"],
-                                              activation=act,
-                                              input_shape=input.shape)(input)
-    op.output_layer = layer
-  elif op.layer_type == "FULLY_CONNECTED":
-    input = op.op_input[0].output_layer
-    dim = filter[0]
-    json_op = json_ops[op.output]
-    bops = json_op["builtin_options"]
-    act = None
-    if bops["fused_activation_function"] != "NONE":
-      act = bops["fused_activation_function"].lower()
-    layer = tf.keras.layers.Dense(dim,act)(input)
-    op.output_layer = layer
-  elif op.layer_type == "CONCATENATION":
-    concat_list = []
-    for input_op in op.op_input:
-      concat_list.append(input_op.output_layer)
-    layer = tf.keras.layers.Concatenate()(concat_list)
-    op.output_layer = layer
-  elif op.layer_type == "ADD":
-    add_list = []
-    for input_op in op.op_input:
-      add_list.append(input_op.output_layer)
-    layer = tf.keras.layers.Add()(add_list)
-    op.output_layer = layer
-  elif op.layer_type == "MEAN":
-    input = op.op_input[0].output_layer
-    layer = tf.keras.layers.GlobalAveragePooling2D()(input)
-    op.output_layer = layer
-  elif op.layer_type == "MAX_POOL_2D":
-    input = op.op_input[0].output_layer
-    json_op = json_ops[op.output]
-    bops = json_op["builtin_options"]
-    layer = tf.keras.layers.MaxPool2D((bops["filter_width"],bops["filter_height"]),
-                                      (bops["stride_w"],bops["stride_h"]),
-                                      padding=bops["padding"].lower(),
-                                      input_shape=input.shape)(input)
-    op.output_layer = layer
-  elif op.layer_type == "AVERAGE_POOL_2D":
-    input = op.op_input[0].output_layer
-    json_op = json_ops[op.output]
-    bops = json_op["builtin_options"]
-    layer = tf.keras.layers.AveragePooling2D(pool_size=(bops["filter_width"],
-                                                        bops["filter_height"]),
-                                             strides=(bops["stride_w"],bops["stride_h"]),
-                                             padding=bops["padding"].lower(),
-                                             input_shape=input.shape)(input)
-    op.output_layer = layer
-  elif op.layer_type == "RESHAPE":
-    input = op.op_input[0].output_layer
-    out_shape = tensors[op.output]
-    layer = tf.keras.layers.Reshape(out_shape)(input)
-    op.output_layer = layer
-  elif op.layer_type == "SOFTMAX":
-    input = op.op_input[0].output_layer
-    print(input)
-    layer = tf.keras.layers.Softmax()(input)
-    op.output_layer = layer
-  elif op.layer_type == "QUANTIZE":
-    # TODO: Skipping for now
-    op.output_layer = op.op_input[0].output_layer
-  else:
-    print("Unknown layer: " + op.layer_type + "!")
-    sys.exit(1)
+  iter_repeat_ops = []
+  for j in range(0,i):
+    repeat_ops[0].op_input = None
+    next_ops = copy.deepcopy(repeat_ops)
+    if j > 0:
+      next_ops[0].op_input = [iter_repeat_ops[-1]]
+    iter_repeat_ops = iter_repeat_ops + next_ops
 
-model = tf.keras.models.Model(inputs=a,outputs=ops[len(ops)-1].output_layer)
-
-adam = keras.optimizers.Adam(epsilon = 1e-08)
-#model.compile(optimizer=adam, loss="sparse_categorical_crossentropy", metrics=["accuracy"])
-model.compile()
-
-#history = model.fit(X_full, Y_full, batch_size=128, epochs=1)
-converter = tf.lite.TFLiteConverter.from_keras_model(model) #this works!!!!
-
-converter.optimizations = [tf.lite.Optimize.DEFAULT]
-# This sets the representative dataset for quantization
-converter.representative_dataset = representative_data_gen
-# This ensures that if any ops can't be quantized, the converter throws an error
-converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS_INT8]
-# For full integer quantization, though supported types defaults to int8 only, we explicitly declare it for clarity.
-converter.target_spec.supported_types = [tf.int8]
-# These set the input and output tensors to uint8 (added in r2.3)
-converter.inference_input_type = tf.uint8
-converter.inference_output_type = tf.uint8
-tflite_model = converter.convert()
-
-with open("new_" + input_name + ".tflite", 'wb') as f:
-   f.write(tflite_model)
+  iter_repeat_ops[0].op_input = [front_ops[-1]]
+  back_ops[0].op_input = [iter_repeat_ops[-1]]
+  ops = front_ops + iter_repeat_ops + back_ops
+  ops[0].op_input = [first_op]
+  
+  model = create_model(ops,tensors,json_ops,model_input)
+  output_model(model,str(i) + "_" + input_name + ".tflite")
