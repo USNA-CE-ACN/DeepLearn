@@ -4,63 +4,50 @@ import numpy as np
 
 from utility.parse_tf_analysis import *
 
-def expand_conv2d_layer(round,input,filter,bops,act,tensors):
-    # Single Conv2D in a column
-    layer1 = tf.keras.layers.Conv2D(filter[0],(filter[1],filter[2]),
+def get_standard_conv2d(bias,filter,bops,act,input):
+    layer = tf.keras.layers.Conv2D(bias,(filter[1],filter[2]),
                                    (bops["stride_w"],bops["stride_h"]),
                                    padding=bops["padding"].lower(),
                                    activation=act,
+                                   use_bias=False,
                                    input_shape=input.shape)(input)
+    return layer
+
+def expand_conv2d_layer(round,input,filter,bops,act,tensors,op):
+    # Single Conv2D in a column
+    layer1 = get_standard_conv2d(filter[0],filter,bops,act,input)
     if round == 0:
         return layer1
 
     concat_list = [layer1]
 
+    front_filter = list(filter)
+    front_filter[1] = 1
+
+    back_filter = list(filter)
+    back_filter[2] = 1
+    
     if round >= 1:
         # 2 Conv2Ds in a column
-        layer2 = tf.keras.layers.Conv2D(filter[0],(filter[1],filter[2]),
-                                        (bops["stride_w"]*2,bops["stride_h"]*2),
-                                        padding=bops["padding"].lower(),
-                                        activation=act,
-                                        input_shape=input.shape)(input)
-        
-        layer3 = tf.keras.layers.Conv2D(filter[0],(filter[1],filter[2]),
-                                        (bops["stride_w"],bops["stride_h"]),
-                                        padding=bops["padding"].lower(),
-                                        activation=act,
-                                        input_shape=input.shape)(layer2)
+        layer2 = get_standard_conv2d(filter[0]/2,filter,bops,act,input)        
+        layer3 = get_standard_conv2d(filter[0],filter,bops,act,layer2)
         
         if round >= 4:
             mid_concat = [layer3]
-            layer4 = tf.keras.layers.Conv2D(filter[0],(filter[1],filter[2]),
-                                            (bops["stride_w"],bops["stride_h"]),
-                                            padding=bops["padding"].lower(),
-                                            activation=act,
-                                            input_shape=input.shape)(layer2)
+            layer4 = get_standard_conv2d(filter[0]/2,front_filter,bops,act,layer2)
+            
             mid_concat.append(layer4)
 
             if round >= 6:
-                layer5 = tf.keras.layers.Conv2D(filter[0],(filter[1],filter[2]),
-                                                (bops["stride_w"],bops["stride_h"]),
-                                                padding=bops["padding"].lower(),
-                                                activation=act,
-                                                input_shape=input.shape)(layer2)
+                layer5 = get_standard_conv2d(filter[0]/2,back_filter,bops,act,layer2)
                 mid_concat.append(layer5)
 
                 if round >= 8:
-                    layer6 = tf.keras.layers.Conv2D(filter[0],(filter[1],filter[2]),
-                                                    (bops["stride_w"],bops["stride_h"]),
-                                                    padding=bops["padding"].lower(),
-                                                    activation=act,
-                                                    input_shape=input.shape)(layer2)
+                    layer6 = get_standard_conv2d(filter[0],front_filter,bops,act,layer2)
                     mid_concat.append(layer6)
 
                     if round>= 10:
-                        layer7 = tf.keras.layers.Conv2D(filter[0],(filter[1],filter[2]),
-                                                        (bops["stride_w"],bops["stride_h"]),
-                                                        padding=bops["padding"].lower(),
-                                                        activation=act,
-                                                        input_shape=input.shape)(layer2)
+                        layer7 = get_standard_conv2d(filter[0],back_filter,bops,act,layer2)
                         mid_concat.append(layer7)
                         
             concat_list.append(tf.keras.layers.Concatenate()(mid_concat))
@@ -75,61 +62,29 @@ def expand_conv2d_layer(round,input,filter,bops,act,tensors):
                                                   strides=(bops["stride_w"],bops["stride_h"]),
                                                   padding=bops["padding"].lower(),
                                                   input_shape=input.shape)(input)
-        layer3 = tf.keras.layers.Conv2D(filter[0],(filter[1],filter[2]),
-                                        (bops["stride_w"],bops["stride_h"]),
-                                        padding=bops["padding"].lower(),
-                                        activation=act,
-                                        input_shape=input.shape)(layer2)
+        layer3 = get_standard_conv2d(filter[0],filter,bops,act,layer2)
         concat_list.append(layer3)
     if round >= 3:
         # 3 Conv2Ds in a column
-        layer2 = tf.keras.layers.Conv2D(filter[0],(filter[1],filter[2]),
-                                        (bops["stride_w"],bops["stride_h"]),
-                                        padding=bops["padding"].lower(),
-                                        activation=act,
-                                        input_shape=input.shape)(input)
-        layer3 = tf.keras.layers.Conv2D(filter[0],(filter[1],filter[2]),
-                                        (bops["stride_w"],bops["stride_h"]),
-                                        padding=bops["padding"].lower(),
-                                        activation=act,
-                                        input_shape=input.shape)(layer2)
-        layer4 = tf.keras.layers.Conv2D(filter[0],(filter[1],filter[2]),
-                                        (bops["stride_w"],bops["stride_h"]),
-                                        padding=bops["padding"].lower(),
-                                        activation=act,
-                                        input_shape=input.shape)(layer3)
+        layer2 = get_standard_conv2d(filter[0]/4,filter,bops,act,input)
+        layer3 = get_standard_conv2d(filter[0]/2,filter,bops,act,layer2)
+        layer4 = get_standard_conv2d(filter[0],filter,bops,act,layer3)
 
         if round >= 5:
             mid_concat = [layer4]
-            layer4 = tf.keras.layers.Conv2D(filter[0],(filter[1],filter[2]),
-                                            (bops["stride_w"],bops["stride_h"]),
-                                            padding=bops["padding"].lower(),
-                                            activation=act,
-                                            input_shape=input.shape)(layer3)
+            layer5 = get_standard_conv2d(filter[0]/2,front_filter,bops,act,layer3)
             mid_concat.append(layer5)
 
             if round >= 7:
-                layer6 = tf.keras.layers.Conv2D(filter[0],(filter[1],filter[2]),
-                                                (bops["stride_w"],bops["stride_h"]),
-                                                padding=bops["padding"].lower(),
-                                                activation=act,
-                                                input_shape=input.shape)(layer3)
+                layer6 = get_standard_conv2d(filter[0]/2,back_filter,bops,act,layer3)
                 mid_concat.append(layer6)
 
                 if round >= 9:
-                    layer7 = tf.keras.layers.Conv2D(filter[0],(filter[1],filter[2]),
-                                                    (bops["stride_w"],bops["stride_h"]),
-                                                    padding=bops["padding"].lower(),
-                                                    activation=act,
-                                                    input_shape=input.shape)(layer3)
+                    layer7 = get_standard_conv2d(filter[0],front_filter,bops,act,layer3)
                     mid_concat.append(layer7)
 
                     if round>= 11:
-                        layer8 = tf.keras.layers.Conv2D(filter[0],(filter[1],filter[2]),
-                                                        (bops["stride_w"],bops["stride_h"]),
-                                                        padding=bops["padding"].lower(),
-                                                        activation=act,
-                                                        input_shape=input.shape)(layer3)
+                        layer8 = get_standard_conv2d(filter[0],back_filter,bops,act,layer3)
                         mid_concat.append(layer8)
             
             concat_list.append(tf.keras.layers.Concatenate()(mid_concat))
@@ -139,6 +94,7 @@ def expand_conv2d_layer(round,input,filter,bops,act,tensors):
     return tf.keras.layers.Concatenate()(concat_list)
 
 def create_model(ops,tensors,json_ops,model_input,round,expandSet):
+    print("Starting create_model")
     for op in ops:
         print_op(op)
         if op.layer_type == "CONV_2D" or op.layer_type == "DEPTHWISE_CONV_2D":
@@ -151,9 +107,9 @@ def create_model(ops,tensors,json_ops,model_input,round,expandSet):
                 act = bops["fused_activation_function"].lower()
             if op.layer_type == "CONV_2D":
                 if op.number in expandSet:
-                    layer = expand_conv2d_layer(round,input,filter,bops,act,tensors)
+                    layer = expand_conv2d_layer(round,input,filter,bops,act,tensors,op)
                 else:
-                    layer = expand_conv2d_layer(0,input,filter,bops,act,tensors)
+                    layer = expand_conv2d_layer(0,input,filter,bops,act,tensors,op)
             else:
                 layer = tf.keras.layers.DepthwiseConv2D(filter[0],(bops["stride_w"],bops["stride_h"]),
                                                         padding=bops["padding"].lower(),
@@ -226,7 +182,8 @@ def create_model(ops,tensors,json_ops,model_input,round,expandSet):
         else:
             print("Unknown layer: " + op.layer_type + "!")
             sys.exit(1)
-            
+
+    print("Creating model")
     model = tf.keras.models.Model(inputs=model_input,outputs=ops[len(ops)-1].output_layer)
     return model
 
@@ -241,15 +198,20 @@ def set_first_input(new_first_input):
 
 def representative_data_gen():
     X_full = np.random.rand(*(input_size + first_input))
-    for i in range(100):
+    for i in range(3):
         yield [X_full[i].astype(np.float32)]
 
 def output_model(model,filename):
     adam = keras.optimizers.Adam(epsilon = 1e-08)
     #model.compile(optimizer=adam, loss="sparse_categorical_crossentropy", metrics=["accuracy"])
     model.compile()
-    
+    print("Compiled model")
+
+    model.save(filename + ".keras")
+
     converter = tf.lite.TFLiteConverter.from_keras_model(model) #this works!!!!
+
+    print("Created converter " + filename)
     
     converter.optimizations = [tf.lite.Optimize.DEFAULT]
     # This sets the representative dataset for quantization
@@ -262,6 +224,8 @@ def output_model(model,filename):
     converter.inference_input_type = tf.uint8
     converter.inference_output_type = tf.uint8
     tflite_model = converter.convert()
+
+    print("Converted model")
     
     with open(filename, 'wb') as f:
         f.write(tflite_model)

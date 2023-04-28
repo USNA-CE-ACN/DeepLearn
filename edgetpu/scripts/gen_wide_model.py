@@ -39,4 +39,5 @@ for i in range(0,12):
   ops[0].op_input = [first_op]
  
   model = create_model(ops,tensors,json_ops,model_input,i,expandSet)
+  print("got model")
   output_model(model,str(i) + "_wide_" + input_name + ".tflite")
