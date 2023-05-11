@@ -1,6 +1,7 @@
 import tensorflow as tf
 from tensorflow import keras
 import numpy as np
+import math
 
 from utility.parse_tf_analysis import *
 
@@ -90,10 +91,18 @@ def expand_conv2d_layer(round,input,filter,bops,act,tensors,op):
             concat_list.append(tf.keras.layers.Concatenate()(mid_concat))
         else:
             concat_list.append(layer4)
-       
-    return tf.keras.layers.Concatenate()(concat_list)
+
+    clayer = tf.keras.layers.Concatenate()(concat_list)
+    # Use when condensing layers in middle
+    #mplayer = tf.keras.layers.MaxPooling2D(pool_size=(1,clayer.shape[3]/layer1.shape[3]),data_format="channels_first")(clayer)
+    mplayer = clayer # Use when expanding the model
+    return mplayer
+
+scales = [1,1.2,1.4,1.6,1.8,2,2.2,2.4,2.6,2.8,3,3.2,3.4,3.6,3.8,4]
 
 def create_model(ops,tensors,json_ops,model_input,round,expandSet):
+    scale_filter = scales[round]
+    
     print("Starting create_model")
     for op in ops:
         print_op(op)
@@ -109,9 +118,9 @@ def create_model(ops,tensors,json_ops,model_input,round,expandSet):
                 if op.number in expandSet:
                     layer = expand_conv2d_layer(round,input,filter,bops,act,tensors,op)
                 else:
-                    layer = expand_conv2d_layer(0,input,filter,bops,act,tensors,op)
+                    layer = get_standard_conv2d(math.floor(filter[0]*scale_filter),filter,bops,act,input)
             else:
-                layer = tf.keras.layers.DepthwiseConv2D(filter[0],(bops["stride_w"],bops["stride_h"]),
+                layer = tf.keras.layers.DepthwiseConv2D(math.floor(filter[0]*scale_filter),(bops["stride_w"],bops["stride_h"]),
                                                         padding=bops["padding"].lower(),
                                                         depth_multiplier=bops["depth_multiplier"],
                                                         activation=act,

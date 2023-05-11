@@ -16,19 +16,6 @@ class Operation:
         self.padding = ""
         self.activation = ""
 
-#    def __deepcopy__(self,memo):
-#        dup = Operation()
-#        dup.layer_type = self.layer_type
-#        dup.number = self.number
-#        dup.op_input = self.op_input
-#        dup.output = self.output
-#        dup.filter = self.filter
-#        dup.stride_w = self.stride_w
-#        dup.stride_h = self.stride_h
-#        dup.padding = self.padding
-#        dup.activation = self.activation
-#        return dup
-
 def print_op(op):
    print(str(op.number) + ": " + op.layer_type)
    for oop in op.op_input:

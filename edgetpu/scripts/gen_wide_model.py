@@ -28,7 +28,10 @@ for onum in range(0,len(ops)):
     print(str(onum) + ": " + ops[onum].layer_type)
 
 expandLayers = input("\nEnter a comma-separated list of the layers you want to widen: ")
-expandSet = [int(num) for num in expandLayers.split(",")]
+if expandLayers:
+    expandSet = [int(num) for num in expandLayers.split(",")]
+else:
+    expandSet = []
 
 for i in range(0,12):
   keras.backend.clear_session()
