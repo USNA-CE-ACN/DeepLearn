@@ -124,7 +124,7 @@ def create_model(ops,tensors,json_ops,model_input,round,expandSet):
                                                         padding=bops["padding"].lower(),
                                                         depth_multiplier=bops["depth_multiplier"],
                                                         activation=act,
-                                                        input_shape=input.shape)(input)
+                                                        input_shape=input.shape[1:])(input)
             op.output_layer = layer
         elif op.layer_type == "FULLY_CONNECTED":
             input = op.op_input[0].output_layer
@@ -159,7 +159,7 @@ def create_model(ops,tensors,json_ops,model_input,round,expandSet):
             layer = tf.keras.layers.MaxPool2D((bops["filter_width"],bops["filter_height"]),
                                               (bops["stride_w"],bops["stride_h"]),
                                               padding=bops["padding"].lower(),
-                                              input_shape=input.shape)(input)
+                                              input_shape=input.shape[1:])(input)
             op.output_layer = layer
         elif op.layer_type == "AVERAGE_POOL_2D":
             input = op.op_input[0].output_layer
@@ -178,7 +178,7 @@ def create_model(ops,tensors,json_ops,model_input,round,expandSet):
         elif op.layer_type == "RESHAPE":
             input = op.op_input[0].output_layer
             out_shape = tensors[op.output]
-            layer = tf.keras.layers.Reshape(out_shape)(input)
+            layer = tf.keras.layers.Reshape((out_shape[1],), input_shape=input.shape)(input)
             op.output_layer = layer
         elif op.layer_type == "SOFTMAX":
             input = op.op_input[0].output_layer
@@ -216,7 +216,7 @@ def output_model(model,filename):
     model.compile()
     print("Compiled model")
 
-    model.save(filename + ".keras")
+    #model.save(filename + ".keras")
 
     converter = tf.lite.TFLiteConverter.from_keras_model(model) #this works!!!!
 
@@ -226,7 +226,8 @@ def output_model(model,filename):
     # This sets the representative dataset for quantization
     converter.representative_dataset = representative_data_gen
     # This ensures that if any ops can't be quantized, the converter throws an error
-    converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS_INT8]
+#    converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS_INT8]
+    converter.target_spec.supported_ops = [tf.lite.OpsSet.SELECT_TF_OPS]
     # For full integer quantization, though supported types defaults to int8 only, we explicitly declare it for clarity.
     converter.target_spec.supported_types = [tf.int8]
     # These set the input and output tensors to uint8 (added in r2.3)
