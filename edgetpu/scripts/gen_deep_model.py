@@ -59,9 +59,9 @@ output_model(model,"0_" + input_name + ".tflite")
 # Fix back_ops for repeating
 back_ops[0].op_input = [repeat_ops[-1]]
 
-for i in range(1,21):
+for i in range(1,51):
   keras.backend.clear_session()
-  model_input = tf.keras.layers.Input(shape=first_input[1:])
+  model_input = tf.keras.layers.Input(shape=first_input[1:],batch_size=1)
   first_op = Operation()
   first_op.layer_type = "INPUT"
   first_op.output_layer = model_input

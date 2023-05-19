@@ -98,10 +98,12 @@ def expand_conv2d_layer(round,input,filter,bops,act,tensors,op):
     mplayer = clayer # Use when expanding the model
     return mplayer
 
-scales = [1,1.2,1.4,1.6,1.8,2,2.2,2.4,2.6,2.8,3,3.2,3.4,3.6,3.8,4]
+scales = [1,1.1,1.2,1.3,1.4,1.5,1.6,1.7,1.8,1.9,2,2.1,2.2,2.3,2.4,2.5]
+#scales = [1,1.2,1.4,1.6,1.8,2,2.2,2.4,2.6,2.8,3,3.2,3.4,3.6,3.8,4]
 
-def create_model(ops,tensors,json_ops,model_input,round,expandSet):
-    scale_filter = scales[round]
+def create_model(ops,tensors,json_ops,model_input,round=0,expandSet=[]):
+    #scale_filter = scales[round]
+    scale_filter = 1
     
     print("Starting create_model")
     for op in ops:
@@ -178,7 +180,7 @@ def create_model(ops,tensors,json_ops,model_input,round,expandSet):
         elif op.layer_type == "RESHAPE":
             input = op.op_input[0].output_layer
             out_shape = tensors[op.output]
-            layer = tf.keras.layers.Reshape((out_shape[1],), input_shape=input.shape)(input)
+            layer = tf.keras.layers.Reshape((input.shape[-1],), input_shape=input.shape)(input)
             op.output_layer = layer
         elif op.layer_type == "SOFTMAX":
             input = op.op_input[0].output_layer

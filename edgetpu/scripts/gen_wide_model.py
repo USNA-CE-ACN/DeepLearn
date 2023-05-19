@@ -35,7 +35,7 @@ else:
 
 for i in range(0,12):
   keras.backend.clear_session()
-  model_input = tf.keras.layers.Input(shape=first_input[1:])
+  model_input = tf.keras.layers.Input(shape=first_input[1:],batch_size=1)
   first_op = Operation()
   first_op.layer_type = "INPUT"
   first_op.output_layer = model_input
