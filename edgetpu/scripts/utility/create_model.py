@@ -206,7 +206,7 @@ def set_first_input(new_first_input):
     first_input = new_first_input
     global input_size
     input_size = (100,)
-
+    
 def representative_data_gen():
     X_full = np.random.rand(*(input_size + first_input))
     for i in range(3):

@@ -30,8 +30,8 @@ for input_scale in input_scales:
     scaledw = int(first_input[1] * input_scale)
     scaledh = int(first_input[2] * input_scale)
     scaled_tuple = (scaledw,scaledh,3)
-    model_input = tf.keras.layers.Input(shape=scaled_tuple)
-    set_first_input(scaled_tuple)
+    model_input = tf.keras.layers.Input(shape=scaled_tuple,batch_size=1)
+    set_first_input((1,scaledw,scaledh,3))
     resized_input = tf.keras.layers.Resizing(first_input[1],first_input[2])(model_input)
     first_op = Operation()
     first_op.layer_type = "INPUT"

@@ -1,6 +1,6 @@
 import sys,os
-from silence_tensorflow import silence_tensorflow
-silence_tensorflow()
+#from silence_tensorflow import silence_tensorflow
+#silence_tensorflow()
 import tensorflow as tf
 from tensorflow import keras
 import numpy as np
