@@ -98,15 +98,15 @@ def expand_conv2d_layer(round,input,filter,bops,act,tensors,op):
     mplayer = clayer # Use when expanding the model
     return mplayer
 
-scales = [1,1.1,1.2,1.3,1.4,1.5,1.6,1.7,1.8,1.9,2,2.1,2.2,2.3,2.4,2.5]
+scales = [1,1.1,1.2,1.3,1.4,1.5,1.6,1.7,1.8,1.9,2,2.1,2.2,2.3,2.4,2.5,2.6,2.7,2.8,2.9,3.0,3.1,3.2,3.3,3.4,3.5,3.6,3.7,3.8,3.9,4.0,4.1,4.2,4.3,4.4,4.5,4.6,4.7,4.8,4.9,5.0]
 #scales = [1,1.2,1.4,1.6,1.8,2,2.2,2.4,2.6,2.8,3,3.2,3.4,3.6,3.8,4]
 
 def create_model(ops,tensors,json_ops,model_input,round=0,expandSet=[]):
-    #scale_filter = scales[round]
-    scale_filter = 1
     
     print("Starting create_model")
     for op in ops:
+        scale_filter = 1
+        
         print_op(op)
         if op.layer_type == "CONV_2D" or op.layer_type == "DEPTHWISE_CONV_2D":
             input = op.op_input[0].output_layer
@@ -119,6 +119,8 @@ def create_model(ops,tensors,json_ops,model_input,round=0,expandSet=[]):
             if op.layer_type == "CONV_2D":
                 if op.number in expandSet:
                     layer = expand_conv2d_layer(round,input,filter,bops,act,tensors,op)
+                    #scale_filter = scales[round]
+                    #layer = get_standard_conv2d(math.floor(filter[0]*scale_filter),filter,bops,act,input)
                 else:
                     layer = get_standard_conv2d(math.floor(filter[0]*scale_filter),filter,bops,act,input)
             else:

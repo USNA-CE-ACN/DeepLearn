@@ -32,7 +32,9 @@ for input_size in input_sizes:
     model_input = tf.keras.layers.Input(shape=(input_size),batch_size=1)
     set_first_input((input_size,))
     size = math.prod(first_input[1:])
-    dsize = int(math.sqrt(int(math.sqrt(int(size / 3)))))
+    dsize = int(size / 3)
+    #dsize = int(math.sqrt(int(math.sqrt(int(size / 3))))) scaled2
+    #dsize = int(math.sqrt(int(size / 3)))
     dense_input = tf.keras.layers.Dense(dsize*dsize*3)(model_input)
     shaped_input = tf.keras.layers.Reshape((dsize,dsize,3))(dense_input)
     resized_input = tf.keras.layers.Resizing(first_input[1],first_input[2])(shaped_input)

@@ -31,6 +31,7 @@ for i in range(0,num_layers):
     layer = tf.keras.layers.Conv2D(bias_size,(filter_size,filter_size),
                                    (1,1),
                                    activation="relu",
+                                   padding="same",
                                    use_bias=False,
                                    input_shape=prev_op.shape)(prev_op)
     prev_op = layer # Chain to next layer
@@ -41,7 +42,7 @@ pool2d = tf.keras.layers.AveragePooling2D(pool_size=(layer.shape[1],layer.shape[
                                           strides=(2,2),padding="valid",
                                           input_shape=layer.shape)(layer)
 
-conv2d = tf.keras.layers.Conv2D(output_size, (1,1), (1,1),
+conv2d = tf.keras.layers.Conv2D(output_size, (1,1), (1,1), padding="same",
                                 input_shape=pool2d.shape)(pool2d)
 
 reshape = tf.keras.layers.Reshape((1,output_size), input_shape=conv2d.shape)(conv2d) 
@@ -71,12 +72,12 @@ converter.optimizations = [tf.lite.Optimize.DEFAULT]
 converter.representative_dataset = representative_data_gen
 # This ensures that if any ops can't be quantized, the converter throws an error
 #    converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS_INT8]
-converter.target_spec.supported_ops = [tf.lite.OpsSet.SELECT_TF_OPS]
+converter.target_spec.supported_ops = [tf.lite.OpsSet.TFLITE_BUILTINS_INT8]
 # For full integer quantization, though supported types defaults to int8 only, we explicitly declare it for clarity.
 converter.target_spec.supported_types = [tf.int8]
 # These set the input and output tensors to uint8 (added in r2.3)
-converter.inference_input_type = tf.uint8
-converter.inference_output_type = tf.uint8
+converter.inference_input_type = tf.int8
+converter.inference_output_type = tf.int8
 tflite_model = converter.convert()
 
 print("Converted model")
