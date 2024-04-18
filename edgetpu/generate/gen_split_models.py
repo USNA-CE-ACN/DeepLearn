@@ -55,11 +55,11 @@ for input_scale in input_scales:
     scaled_tuple = (scaledw,scaledh,3)
     model_input = tf.keras.layers.Input(shape=scaled_tuple,batch_size=1)
     set_first_input((1,scaledw,scaledh,3))
-    resized_input = tf.keras.layers.Resizing(first_input[1],first_input[2])(model_input)
+    #resized_input = tf.keras.layers.Resizing(first_input[1],first_input[2])(model_input)
     first_op = Operation()
     first_op.layer_type = "INPUT"
-    first_op.output_layer = resized_input
+    first_op.output_layer = model_input
     ops[0].op_input = [first_op]
     
-    model = create_model(ops,tensors,json_ops,model_input,0,[])
+    model = create_model(ops,tensors,json_ops,model_input,0)
     output_model(model,str(input_scale) + "_" + input_name + ".tflite")
