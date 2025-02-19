@@ -1,6 +1,6 @@
 import sys,os
 from silence_tensorflow import silence_tensorflow
-#silence_tensorflow()
+silence_tensorflow()
 import tensorflow as tf
 import keras
 from tensorflow.keras.layers import Conv2D
@@ -50,26 +50,54 @@ def copy_weights(old_layer,small_layer,large_layer):
     large_layer.set_weights(full_trunc_large)
 
 def load_data():
-    result = tfds.load('imagenet2012', batch_size = -1)
-    (x_train, y_train) = result['train']['image'],result['train']['label']
+    first_n_labels = []
+    result = tfds.load('imagenet_v2', batch_size=-1)
+    print("Finished load")
+    #(x_train, y_train) = result['train']['image'],result['train']['label']
     (x_test, y_test) = result['test']['image'],result['test']['label']
+    
+    small_test_x = []
+    small_test_y = []
 
-    y_train = tf.keras.utils.to_categorical(y_train, num_classes=1000)
-    y_test = tf.keras.utils.to_categorical(y_test, num_classes=1000)
-    return ((x_train, y_train), (x_test, y_test))
+    large_test_x = []
+    large_test_y = []
+    
+    for i in range(len(x_test)):
+        image = tf.image.resize_with_crop_or_pad(x_test[i],224,224)
+
+        # Split output classes among large and small model (basic for now)
+        if len(first_n_labels) < 200:
+            first_n_labels.append(y_test[i])
+
+        if y_test[i] in first_n_labels:
+            small_test_x.append(image)
+            small_test_y.append([y_test[i]])
+        else:
+            large_test_x.append(image)
+            large_test_y.append([y_test[i]])
+
+    small_test_x = tf.convert_to_tensor(small_test_x,dtype=tf.uint8)
+    small_test_y = tf.convert_to_tensor(small_test_y)
+
+    large_test_x = tf.convert_to_tensor(large_test_x,dtype=tf.uint8)
+    large_test_y = tf.convert_to_tensor(large_test_y)
+
+    small_test_y = tf.keras.utils.to_categorical(small_test_y, num_classes=200)
+    large_test_y = tf.keras.utils.to_categorical(large_test_y, num_classes=800)
+    
+    return ((small_test_x, small_test_y), (large_test_x,large_test_y))
 
 base_model = tf.keras.applications.MobileNet(
 )  # Do not include the ImageNet classifier at the top. 
 
 base_model.trainable = False
 
-output_shape = base_model.get_layer(index=len(base_model.layers)-1).output_shape
 inputs = keras.Input(shape=(224,224,3))
 
 last_small_layer = inputs
 last_large_layer = inputs
 
-for layer in base_model.layers:
+for layer in base_model.layers[1:]:
     if isinstance(layer,Conv2D):
         small_size_scaled = math.floor(layer.filters*small_model_scale)
         large_size_scaled = layer.filters - small_size_scaled
@@ -77,20 +105,6 @@ for layer in base_model.layers:
         small_layer = small_layer_obj(last_small_layer)
 
         large_layer_obj = Conv2D(large_size_scaled,layer.kernel_size,layer.strides,layer.padding,layer.data_format,layer.dilation_rate,layer.groups,layer.activation,layer.use_bias,layer.kernel_initializer,layer.bias_initializer,layer.kernel_regularizer,layer.bias_regularizer,layer.kernel_constraint,layer.bias_constraint)
-        large_layer = large_layer_obj(last_large_layer)
-
-        copy_weights(layer,small_layer_obj,large_layer_obj)
-        
-        last_small_layer = small_layer
-        last_large_layer = large_layer
-    elif isinstance(layer,DepthwiseConv2D) and layer.filters != None:
-        small_size_scaled = math.floor(layer.filters*small_model_scale)
-        large_size_scaled = layer.filters - small_size_scaled
-
-        small_layer_obj = DepthwiseConv2D(small_size_scaled,layer.kernel_size,layer.strides,layer.padding,layer.depth_multiplier,layer.data_format,layer.dilation_rate,layer.activation,layer.use_bias,layer.depthwise_initializer,layer.bias_initializer,layer.depthwise_regularizer,layer.bias_regularizer,layer.activity_regularizer,layer.depthwise_constraint,layer.bias_constraint)
-        small_layer = small_layer_obj(last_small_layer)
-
-        large_layer_obj = DepthwiseConv2D(large_size_scaled,layer.kernel_size,layer.strides,layer.padding,layer.depth_multiplier,layer.data_format,layer.dilation_rate,layer.activation,layer.use_bias,layer.depthwise_initializer,layer.bias_initializer,layer.depthwise_regularizer,layer.bias_regularizer,layer.activity_regularizer,layer.depthwise_constraint,layer.bias_constraint)
         large_layer = large_layer_obj(last_large_layer)
 
         copy_weights(layer,small_layer_obj,large_layer_obj)
@@ -106,8 +120,8 @@ for layer in base_model.layers:
     else:
         config = layer.get_config()
         weights = layer.get_weights()
-        cloned_small_layer = type(layer).from_config(config)(last_small_layer)
-        cloned_large_layer = type(layer).from_config(config)(last_large_layer)
+        cloned_small_layer = layer.__class__.from_config(config)(last_small_layer)
+        cloned_large_layer = layer.__class__.from_config(config)(last_large_layer)
         
         last_small_layer = cloned_small_layer
         last_large_layer = cloned_large_layer
@@ -115,10 +129,16 @@ for layer in base_model.layers:
 small_output = keras.layers.Dense(last_small_layer.shape[2],activation="softmax")(last_small_layer)
 large_output = keras.layers.Dense(last_large_layer.shape[2],activation="softmax")(last_large_layer)
 
+print("Creating Model Objects")
+
 small_model = keras.Model(inputs,small_output)
 large_model = keras.Model(inputs,large_output)
 
-(x_train, y_train), (x_test, y_test) = load_data()
+print("Loading Data")
+
+((small_test_x, small_test_y), (large_test_x, large_test_y)) = load_data()
+
+print("Creating Opt")
 
 sgd = tf.keras.optimizers.SGD(
     learning_rate = 0.1,
@@ -126,15 +146,25 @@ sgd = tf.keras.optimizers.SGD(
     nesterov=True,
     weight_decay=1e-5)
 
+print("Loaded data, compiling small model")
+
 small_model.compile(optimizer=sgd, loss="categorical_crossentropy", metrics=["accuracy"])                                                                                                                       
-#small_model.fit(x_train, y_train, batch_size=256, epochs=25, validation_data=(x_test,y_test), shuffle=True)                                                                                                     
-scores = small_model.evaluate(x_test, y_test, verbose=1)                                                                                                                                                        
+#small_model.fit(x_train, y_train, batch_size=256, epochs=25, validation_data=(x_test,y_test), shuffle=True)
+
+print("Evaluating small model")
+
+scores = small_model.evaluate(small_test_x, small_test_y, verbose=1)
 print('Test loss:', scores[0])                                                                                                                                                                            
 print('Test accuracy:', scores[1])
 
+print("Compiling large model")
+
 large_model.compile(optimizer=sgd, loss="categorical_crossentropy", metrics=["accuracy"])                                                                                                                       
-#large_model.fit(x_train, y_train, batch_size=256, epochs=25, validation_data=(x_test,y_test), shuffle=True)                                                                                                     
-scores = large_model.evaluate(x_test, y_test, verbose=1)                                                                                                                                                        
+#large_model.fit(x_train, y_train, batch_size=256, epochs=25, validation_data=(x_test,y_test), shuffle=True)
+
+print("Evaluating large model")
+
+scores = large_model.evaluate(large_test_x, large_test_y, verbose=1)                                                                                                                                            
 print('Test loss:', scores[0])                                                                                                                                                                            
 print('Test accuracy:', scores[1])
 
