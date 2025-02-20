@@ -52,7 +52,7 @@ def copy_weights(old_layer,small_layer,large_layer):
  
 def load_data():
     first_n_labels = []
-    result = tfds.load('cifar10', batch_size=-1)
+    result = tfds.load('cifar100', batch_size=-1)
     print("Finished load")
     (x_train, y_train) = result['train']['image'],result['train']['label']
     (x_test, y_test) = result['test']['image'],result['test']['label']
