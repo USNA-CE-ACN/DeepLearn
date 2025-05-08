@@ -18,8 +18,8 @@ from utility.create_model import *
 from utility.parse_tf_json import *
 from utility.parse_tf_analysis import *
 
-small_model_scales = [0.1,0.2,0.3,0.4,0.5]
-large_model_scales = [0.9,0.8,0.7,0.6,0.5]
+small_model_scales = [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9]
+large_model_scales = [0.9,0.8,0.7,0.6,0.5,0.4,0.3,0.2,0.1]
 total_classes = 10
 
 def copy_weights(old_layer,small_layer,large_layer):
@@ -88,23 +88,31 @@ def load_data():
 for i in range(len(small_model_scales)):
     small_model_scale = small_model_scales[i]
     large_model_scale = large_model_scales[i]
-#    base_model = tf.keras.applications.MobileNet(
-        #weights="imagenet",
-#        input_shape=(32,32,3),
-#        include_top=False,
-#        pooling="avg",
-#    )  # Do not include the ImageNet classifier at the top.
+    #base_model = tf.keras.applications.MobileNet(
+    #    weights="imagenet",
+    #    input_shape=(32,32,3),
+    #    include_top=False,
+    #    pooling="avg",
+    #)  # Do not include the ImageNet classifier at the top.
 
     base_model = tf.keras.applications.EfficientNetV2S(
-        weights='imagenet',  # Load weights pre-trained on ImageNet.
+        weights="imagenet",
         input_shape=(32,32,3),
         include_top=False,
-        pooling="avg"
-    )  # Do not include the ImageNet classifier at the top.
-
+        pooling="avg",
+    )  # Do not include the ImageNet classifier at the top. 
+    
+    #base_model = tf.keras.applications.InceptionV3(
+    #    input_shape=(75,75,3),
+    #    include_top=False,
+    #    pooling="avg",
+    #)  # Do not include the ImageNet classifier at the top.
+    
     base_model.trainable = True
     
     inputs = keras.Input(shape=(32,32,3))
+
+    #resize = keras.layers.Resizing(75,75)(inputs)
     
     last_small_layer=inputs
     last_large_layer=inputs
@@ -116,6 +124,7 @@ for i in range(len(small_model_scales)):
 
     for layer in base_model.layers[1:]:
         output_to_layer[layer.output] = layer.name
+        
         if isinstance(layer,Conv2D):
             small_size_scaled = math.floor(layer.filters*small_model_scale)
             large_size_scaled = layer.filters - small_size_scaled
@@ -183,7 +192,7 @@ for i in range(len(small_model_scales)):
 
         new_small_layers.append(last_small_layer)
         new_large_layers.append(last_large_layer)
-
+    
     concat = keras.layers.Concatenate()([last_small_layer,last_large_layer])
     output = keras.layers.Dense(total_classes,activation="softmax")(concat)
         
