@@ -11,7 +11,6 @@ from tensorflow.keras.layers import Multiply
 import numpy as np
 import re
 import copy
-import cv2
 
 import tensorflow_datasets as tfds
 
