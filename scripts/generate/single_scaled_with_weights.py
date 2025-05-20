@@ -21,6 +21,7 @@ from utility.parse_tf_analysis import *
 small_model_scales = [0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9]
 large_model_scales = [0.9,0.8,0.7,0.6,0.5,0.4,0.3,0.2,0.1]
 total_classes = 10
+image_size = 75
 
 def copy_weights(old_layer,small_layer,large_layer):
     if(len(old_layer.get_weights()) > 2):
@@ -51,8 +52,49 @@ def copy_weights(old_layer,small_layer,large_layer):
         
     small_layer.set_weights(full_trunc_small)
     large_layer.set_weights(full_trunc_large)
- 
+
 def load_data():
+    # Load and split the dataset
+    ds_train, ds_test = tfds.load(
+        'eurosat',
+        split=['train[:75%]', 'train[75%:]'],
+        batch_size=-1,
+        as_supervised=True  # returns (image, label) pairs
+    )
+    
+    # Convert to numpy arrays
+    (x_train, y_train) = tfds.as_numpy(ds_train)
+    (x_test, y_test) = tfds.as_numpy(ds_test)
+    
+    train_x = []
+    train_y = []
+    test_x = []
+    test_y = []
+    
+    for i in range(len(x_train)):
+        image = x_train[i]
+        image = tf.image.resize(image,(image_size,image_size))
+        train_x.append(image)
+        train_y.append(y_train[i])
+
+    for i in range(len(x_test)):
+        image = x_test[i]
+        image = tf.image.resize(image,(image_size,image_size))
+        test_x.append(image)
+        test_y.append(y_test[i])
+
+    x_train = tf.convert_to_tensor(train_x,dtype=tf.uint8)
+    x_test = tf.convert_to_tensor(test_x,dtype=tf.uint8)
+
+    train_y = tf.convert_to_tensor(train_y)
+    test_y = tf.convert_to_tensor(test_y)
+    
+    y_train = tf.keras.utils.to_categorical(train_y, num_classes=int(total_classes))
+    y_test = tf.keras.utils.to_categorical(test_y, num_classes=int(total_classes))
+    
+    return (x_train, y_train, x_test, y_test)
+    
+def load_data_cifar():
     first_n_labels = []
     result = tfds.load('cifar10', batch_size=-1)
     print("Finished load")
@@ -104,10 +146,10 @@ def get_mapped_inputs(orig_layer, layer_map):
 
     return input_tensors
 
-def apply_input(new_layer,inputs):
+def apply_input(new_layer,inputs,last_layer):
     if not inputs:
         # This is likely an InputLayer; use output directly
-        x = new_layer.output
+        x = last_layer
     elif len(inputs) == 1:
         x = new_layer(inputs[0])
     else:
@@ -133,58 +175,54 @@ for i in range(len(small_model_scales)):
     
     base_model = tf.keras.applications.InceptionV3(
         weights="imagenet",
-        input_shape=(299,299,3),
+        input_shape=(image_size,image_size,3),
         include_top=False,
         pooling="avg",
     )  # Do not include the ImageNet classifier at the top.
     
-    base_model.trainable = True
-    
-    inputs = keras.Input(shape=(299,299,3))
+    base_model.trainable =True
+
+    inputs = keras.Input(shape=(image_size,image_size,3))
     
     last_small_layer=inputs
     last_large_layer=inputs
-
-    new_small_layers = [inputs]
-    new_large_layers = [inputs]
-
-    output_to_layer = {}
     
     small_layer_map = {}
     large_layer_map = {}
-
-    for layer in base_model.layers[1:]:
-        print(layer)
-        small_inputs = get_mapped_inputs(layer, small_layer_map)
-        large_inputs = get_mapped_inputs(layer, large_layer_map)
+    
+    # Handle first layer specially to deal with input layer connection
+    
+    for layer in [base_model.layers[1]]:
+        small_inputs = inputs
+        large_inputs = inputs
         
         if isinstance(layer,Conv2D):
             small_size_scaled = math.floor(layer.filters*small_model_scale)
             large_size_scaled = layer.filters - small_size_scaled
             small_layer_obj = Conv2D(small_size_scaled,layer.kernel_size,layer.strides,layer.padding,layer.data_format,layer.dilation_rate,layer.groups,layer.activation,layer.use_bias,layer.kernel_initializer,layer.bias_initializer,layer.kernel_regularizer,layer.bias_regularizer,layer.kernel_constraint,layer.bias_constraint)
             
-            small_layer = apply_input(small_layer_obj,small_inputs)
-
+            small_layer = small_layer_obj(small_inputs)
+            
             large_layer_obj = Conv2D(large_size_scaled,layer.kernel_size,layer.strides,layer.padding,layer.data_format,layer.dilation_rate,layer.groups,layer.activation,layer.use_bias,layer.kernel_initializer,layer.bias_initializer,layer.kernel_regularizer,layer.bias_regularizer,layer.kernel_constraint,layer.bias_constraint)
-            large_layer = apply_input(large_layer_obj,large_inputs)
+            large_layer = large_layer_obj(large_inputs)
             large_layer_obj.name = large_layer_obj.name + "_L"
             large_layer.name = large_layer.name + "_L"
-
+            
             #copy_weights(layer,small_layer_obj,large_layer_obj)
             
             last_small_layer = small_layer
             last_large_layer = large_layer
         elif isinstance(layer,Reshape):
             if len(last_small_layer.shape) > 3:
-                small_layer = Reshape((1,last_small_layer.shape[3]))(last_small_layer)
-                large_layer = Reshape((1,last_large_layer.shape[3]))(last_large_layer)
+                small_layer = Reshape((1,last_small_layer.shape[3]))(small_inputs)
+                large_layer = Reshape((1,last_large_layer.shape[3]))(large_inputs)
             elif len(last_small_layer.shape) > 2:
-                small_layer = Reshape((1,last_small_layer.shape[2]))(last_small_layer)
-                large_layer = Reshape((1,last_large_layer.shape[2]))(last_large_layer)
+                small_layer = Reshape((1,last_small_layer.shape[2]))(small_inputs)
+                large_layer = Reshape((1,last_large_layer.shape[2]))(large_inputs)
             else:
-                small_layer = Reshape((1,1,last_small_layer.shape[1]))(last_small_layer)
-                large_layer = Reshape((1,1,last_large_layer.shape[1]))(last_large_layer)
-            
+                small_layer = Reshape((1,1,last_small_layer.shape[1]))(small_inputs)
+                large_layer = Reshape((1,1,last_large_layer.shape[1]))(large_inputs)
+                
             large_layer.name = large_layer.name + "_L"
             
             last_small_layer = small_layer
@@ -202,19 +240,77 @@ for i in range(len(small_model_scales)):
             config = layer.get_config()
             weights = layer.get_weights()
             cloned_small_obj = layer.__class__.from_config(config)
-            cloned_small_layer = apply_input(cloned_small_obj,small_inputs)
+            cloned_small_layer = cloned_small_obj(small_inputs)
             cloned_large_obj = layer.__class__.from_config(config)
-            cloned_large_layer = apply_input(cloned_large_obj,large_inputs)
+            cloned_large_layer = cloned_large_obj(large_inputs)
             
             cloned_large_obj.name = cloned_large_obj.name + "_L"
             cloned_large_layer.name = cloned_large_layer.name + "_L"
-        
+            
             last_small_layer = cloned_small_layer
             last_large_layer = cloned_large_layer
-
-        new_small_layers.append(last_small_layer)
-        new_large_layers.append(last_large_layer)
-
+            
+        small_layer_map[layer] = last_small_layer
+        large_layer_map[layer] = last_large_layer
+            
+    for layer in base_model.layers[2:]:
+        small_inputs = get_mapped_inputs(layer, small_layer_map)
+        large_inputs = get_mapped_inputs(layer, large_layer_map)
+        
+        if isinstance(layer,Conv2D):
+            small_size_scaled = math.floor(layer.filters*small_model_scale)
+            large_size_scaled = layer.filters - small_size_scaled
+            small_layer_obj = Conv2D(small_size_scaled,layer.kernel_size,layer.strides,layer.padding,layer.data_format,layer.dilation_rate,layer.groups,layer.activation,layer.use_bias,layer.kernel_initializer,layer.bias_initializer,layer.kernel_regularizer,layer.bias_regularizer,layer.kernel_constraint,layer.bias_constraint)
+            
+            small_layer = apply_input(small_layer_obj,small_inputs,last_small_layer)
+            
+            large_layer_obj = Conv2D(large_size_scaled,layer.kernel_size,layer.strides,layer.padding,layer.data_format,layer.dilation_rate,layer.groups,layer.activation,layer.use_bias,layer.kernel_initializer,layer.bias_initializer,layer.kernel_regularizer,layer.bias_regularizer,layer.kernel_constraint,layer.bias_constraint)
+            large_layer = apply_input(large_layer_obj,large_inputs,last_large_layer)
+            large_layer_obj.name = large_layer_obj.name + "_L"
+            large_layer.name = large_layer.name + "_L"
+            
+            #copy_weights(layer,small_layer_obj,large_layer_obj)
+            
+            last_small_layer = small_layer
+            last_large_layer = large_layer
+        elif isinstance(layer,Reshape):
+            if len(last_small_layer.shape) > 3:
+                small_layer = Reshape((1,last_small_layer.shape[3]))(small_inputs)
+                large_layer = Reshape((1,last_large_layer.shape[3]))(large_inputs)
+            elif len(last_small_layer.shape) > 2:
+                small_layer = Reshape((1,last_small_layer.shape[2]))(small_inputs)
+                large_layer = Reshape((1,last_large_layer.shape[2]))(large_inputs)
+            else:
+                small_layer = Reshape((1,1,last_small_layer.shape[1]))(small_inputs)
+                large_layer = Reshape((1,1,last_large_layer.shape[1]))(large_inputs)
+                
+                large_layer.name = large_layer.name + "_L"
+                
+                last_small_layer = small_layer
+                last_large_layer = large_layer
+        elif isinstance(layer,Add):
+            last_small_layer = Add()(small_inputs)
+            last_large_layer = Add()(large_inputs)
+        elif isinstance(layer,Multiply):
+            last_small_layer = Multiply()(small_inputs)
+            last_large_layer = Multiply()(large_inputs)
+        elif isinstance(layer,keras.layers.Concatenate):
+            last_small_layer = keras.layers.Concatenate()(small_inputs)
+            last_large_layer = keras.layers.Concatenate()(large_inputs)
+        else:
+            config = layer.get_config()
+            weights = layer.get_weights()
+            cloned_small_obj = layer.__class__.from_config(config)
+            cloned_small_layer = apply_input(cloned_small_obj,small_inputs,last_small_layer)
+            cloned_large_obj = layer.__class__.from_config(config)
+            cloned_large_layer = apply_input(cloned_large_obj,large_inputs,last_large_layer)
+            
+            cloned_large_obj.name = cloned_large_obj.name + "_L"
+            cloned_large_layer.name = cloned_large_layer.name + "_L"
+            
+            last_small_layer = cloned_small_layer
+            last_large_layer = cloned_large_layer
+            
         small_layer_map[layer] = last_small_layer
         large_layer_map[layer] = last_large_layer
     
